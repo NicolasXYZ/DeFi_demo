@@ -3,16 +3,19 @@ const url = require('url');
 
 module.exports = http.createServer((req, res) => {
 
-    var service = require('./serviceInProgess copy.js');
+    var service = require('./service.js');
     const reqUrl = url.parse(req.url, true);
 
     // GET Endpoint for exchange rate
-    if (reqUrl.pathname == '/exchangeRateBATUSDC' && req.method === 'GET') {
+
+
+
+    if (reqUrl.pathname == '/exchangeRateETHcETH' && req.method === 'GET') {
         console.log('Request Type:' +
             req.method + ' Endpoint: ' +
             reqUrl.pathname);
 
-        service.exchangeRateBATUSDC(req, res);
+        service.exchangeRateETHcETH(req, res);
 
     } else if (reqUrl.pathname == '/checkAccount' && req.method === 'GET') {
         console.log('Request Type:' +
@@ -34,6 +37,30 @@ module.exports = http.createServer((req, res) => {
             reqUrl.pathname);
 
         service.SupplyETH(req, res);
+
+    } else if (reqUrl.pathname == '/checkCTokenBalance' && req.method === 'GET') {
+        console.log('Request Type:' +
+            req.method + ' Endpoint: ' +
+            reqUrl.pathname);
+
+        service.checkCTokenBalance(req, res);
+
+    }
+    else if (reqUrl.pathname == '/checkDAIBalance' && req.method === 'GET') {
+        console.log('Request Type:' +
+            req.method + ' Endpoint: ' +
+            reqUrl.pathname);
+
+        service.checkDAIBalance(req, res);
+
+    }
+
+    else if (reqUrl.pathname == '/borrowDAI' && req.method === 'GET') {
+        console.log('Request Type:' +
+            req.method + ' Endpoint: ' +
+            reqUrl.pathname);
+
+        service.borrowDAI(req, res);
 
     } else {
         console.log('Request Type:' +
