@@ -31,7 +31,8 @@ module.exports = function (app) {
         if (isNaN(req.params.amount)) {
             return res.sendStatus(400);
         }
-        await service.SupplyETH(parseInt(app.locals.user)，req.params.amount).then((result) => {
+        let newInput = [req.params.amount, parseInt(app.locals.user)];
+        await service.SupplyETH(newInput).then((result) => {
             return res.sendStatus(200);
         }).catch((error) => {
             return res.sendStatus(400);

@@ -57,11 +57,14 @@ const assetNameETH = 'ETH';
 const underlyingDecimals = 18; // Number of decimals defined in this ERC20 token's contract
 
 // Web3 transaction information, we'll use this for every transaction we'll send
+/*
 const fromMyWallet = {
-  from: myWalletAddress,
+  //from: myWalletAddress
+  from: AccountList[user],
   gasLimit: web3.utils.toHex(6721975),
   gasPrice: web3.utils.toHex(300000000) // use ethgasstation.info (mainnet only)
 };
+*/
 //const privateKeyBuffer = Buffer.from(PRIV_KEY, 'hex')
 
 
@@ -99,21 +102,23 @@ exports.startAndCheckEther = async function (user, res) {
   var response = {
     "text": "balance in Ether in our wallet: " + web3.utils.fromWei(ETHBalance, "ether")
   };
-  res = JSON.stringify(response);
-  console.log(res)
+  res = web3.utils.fromWei(ETHBalance, "ether");
+  console.log(JSON.stringify(response))
   return res;
 };
 
 
-exports.SupplyETH = async function (amount, res) {
-
+exports.SupplyETH = async function ( amountAndUser, user, res) {
+  amount = amountAndUser[0];
+  user = amountAndUser[1];
   console.log('Supplying ' + amount + ' units of ETH to the Compound Protocol...', '\n');
   const ethDecimals = 18; // Ethereum has 18 decimal places
   amountToString = amount.toString();
+
   await cEth.methods.mint().send({
-    from: myWalletAddress,
-    gasLimit: web3.utils.toHex(800000),
-    gasPrice: web3.utils.toHex(20000000000), // use ethgasstation.info (mainnet only)
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(300000000), // use ethgasstation.info (mainnet only)
     value: web3.utils.toHex(web3.utils.toWei(amountToString, 'ether'))
   }).then((result) => {
     console.log('done')
