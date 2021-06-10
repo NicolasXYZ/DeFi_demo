@@ -50,14 +50,15 @@ const underlying = new web3.eth.Contract(erc20Abi, underlyingAddress);
 const cTokenAddress = '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643'; // cDai
 const cErcAbi = config.cErcAbi;
 const cToken = new web3.eth.Contract(cErcAbi, cTokenAddress);
-const assetName = 'DAI'; // for the log output lines
+const assetNameDAI = 'DAI'; // for the log output lines
+const assetNameETH = 'ETH';
 const underlyingDecimals = 18; // Number of decimals defined in this ERC20 token's contract
 
 // Web3 transaction information, we'll use this for every transaction we'll send
 const fromMyWallet = {
   from: myWalletAddress,
-  gasLimit: web3.utils.toHex(5000000),
-  gasPrice: web3.utils.toHex(20000000000) // use ethgasstation.info (mainnet only)
+  gasLimit: web3.utils.toHex(6721975),
+  gasPrice: web3.utils.toHex(300000000) // use ethgasstation.info (mainnet only)
 };
 //const privateKeyBuffer = Buffer.from(PRIV_KEY, 'hex')
 
@@ -112,189 +113,155 @@ exports.startAndCheckEther = async function (req, res) {
 
 
 exports.SupplyETH = async function (amount, res) {
-  
 
-    console.log('Supplying ' + amount + ' units of ETH to the Compound Protocol...', '\n');
-    const ethDecimals = 18; // Ethereum has 18 decimal places
-    amountToString = amount.toString();
-
-    await cEth.methods.mint().send({
-      from: myWalletAddress,
-      gasLimit: web3.utils.toHex(800000),
-      gasPrice: web3.utils.toHex(20000000000), // use ethgasstation.info (mainnet only)
-      value: web3.utils.toHex(web3.utils.toWei(amountToString, 'ether'))
-    }).then((result) => {
-      console.log('done')
-    }).catch((error) => {
-      console.error('[supply] error:', error);
-    });
-
-
-    let cTokenBalance = await cEth.methods.balanceOf(myWalletAddress).call() / 1e8;
-
-    //const ethBalanceWei = await wallet.getBalance()
-    //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
-
-    let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
-    exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
-
-    var error = {
-      "text": " balance in cETH " + cTokenBalance + "; balance that was exchange at the rate (from cETH to ETH) of: " + exchangeRateCurrent
-    };
-
-   
-  
-  //res.end(JSON.stringify(error));
+  console.log('Supplying ' + amount + ' units of ETH to the Compound Protocol...', '\n');
+  const ethDecimals = 18; // Ethereum has 18 decimal places
+  amountToString = amount.toString();
+  await cEth.methods.mint().send({
+    from: myWalletAddress,
+    gasLimit: web3.utils.toHex(800000),
+    gasPrice: web3.utils.toHex(20000000000), // use ethgasstation.info (mainnet only)
+    value: web3.utils.toHex(web3.utils.toWei(amountToString, 'ether'))
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[supply] error:', error);
+  });
+  let cTokenBalance = await cEth.methods.balanceOf(myWalletAddress).call() / 1e8;
+  let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
+  exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
+  var error = {
+    "text": " balance in cETH " + cTokenBalance + "; balance that was exchange at the rate (from cETH to ETH) of: " + exchangeRateCurrent
+  };
   res = JSON.stringify(error);
   console.log(res)
-  return res ;
+  return res;
 };
 
 
 
-exports.borrowDAI = async function (req, res) {
+exports.borrowDAI = async function (amount, res) {
 
-  //web3.eth.accounts.wallet.add( privateKey);
-  //const wallet = web3.eth.accounts.wallet[0];
-  //const myWalletAddress = web3.eth.accounts.wallet[0].address;
+  console.log('\nEntering market (via Comptroller contract) for ETH (as collateral)...');
+  let markets = [cEthAddress]; // This is the cToken contract(s) for your collateral
+  await comptroller.methods.enterMarkets(markets).send(fromMyWallet).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[entering market] error:', error);
+  });
 
-  (async function (error) {
+  console.log('Calculating your liquid assets in the protocol...');
+  let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(myWalletAddress).call();
+  liquidity = liquidity / 1e18;
 
-    const ethToSupplyAsCollateral = 1;
+  console.log(`Fetching ${assetNameDAI} price from the price feed...`);
+  let underlyingPriceInUsd = await priceFeed.methods.price(assetNameDAI).call();
+  underlyingPriceInUsd = underlyingPriceInUsd / 1e6; // Price feed provides price in USD with 6 decimal places
 
+  console.log(`Fetching borrow rate per block for ${assetNameDAI} borrowing...`);
+  let borrowRate = await cToken.methods.borrowRatePerBlock().call();
+  borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
 
-    console.log('\nEntering market (via Comptroller contract) for ETH (as collateral)...');
-    let markets = [cEthAddress]; // This is the cToken contract(s) for your collateral
-    let enterMarkets = await comptroller.methods.enterMarkets(markets).send(fromMyWallet);
+  console.log(`\nYou have ${liquidity} of LIQUID assets (worth of USD) pooled in the protocol.`);
+  console.log(`1 ${assetNameDAI} == ${underlyingPriceInUsd.toFixed(6)} USD`);
+  console.log(`You can borrow up to ${liquidity / underlyingPriceInUsd} ${assetNameDAI} from the protocol.`);
+  console.log(`NEVER borrow near the maximum amount because your account will be instantly liquidated.`);
+  console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetNameDAI} per block.\nThis is based on the current borrow rate.\n`);
 
-
-    //});// Ethers.js overrides are an optional 3rd parameter for `supply`
-    // const trxOptions = { gasLimit: 250000, mantissa: false };
-
-
-
-    console.log('Calculating your liquid assets in the protocol...');
-    let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(myWalletAddress).call();
-    liquidity = liquidity / 1e18;
-
-    console.log(`Fetching ${assetName} price from the price feed...`);
-    let underlyingPriceInUsd = await priceFeed.methods.price(assetName).call();
-    underlyingPriceInUsd = underlyingPriceInUsd / 1e6; // Price feed provides price in USD with 6 decimal places
-
-    console.log(`Fetching borrow rate per block for ${assetName} borrowing...`);
-    let borrowRate = await cToken.methods.borrowRatePerBlock().call();
-    borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
-
-    console.log(`\nYou have ${liquidity} of LIQUID assets (worth of USD) pooled in the protocol.`);
-    console.log(`1 ${assetName} == ${underlyingPriceInUsd.toFixed(6)} USD`);
-    console.log(`You can borrow up to ${liquidity / underlyingPriceInUsd} ${assetName} from the protocol.`);
-    console.log(`NEVER borrow near the maximum amount because your account will be instantly liquidated.`);
-    console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetName} per block.\nThis is based on the current borrow rate.\n`);
-
-    var response = {
-      "text": " Borrow balance of DAI borrowed "
-
-    };
-
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
-
-  })().catch(console.error);
+  const underlyingToBorrow = amount;
+  console.log(`Now attempting to borrow ${underlyingToBorrow} ${assetNameDAI}...`);
+  const scaledUpBorrowAmount = (underlyingToBorrow * Math.pow(10, underlyingDecimals)).toString();
+  await cToken.methods.borrow(scaledUpBorrowAmount).send(fromMyWallet).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[borrow] error:', error);
+  });
+  var response = {
+    "text": " Borrow balance of DAI borrowed "
+  };
+  res = JSON.stringify(response);
+  return res;
 };
 
 
 
 exports.checkDAIBalance = async function (req, res) {
 
-  (async function (error) {
-    const ethDecimals = 18; // Ethereum has 18 decimal places
+  const ethDecimals = 18; // Ethereum has 18 decimal places
 
 
-    let balance = await cToken.methods.borrowBalanceCurrent(myWalletAddress).call();
-    balance = balance / Math.pow(10, underlyingDecimals);
-    console.log(`Borrow balance is ${balance} ${assetName}`);
+  let balance = await cToken.methods.borrowBalanceCurrent(myWalletAddress).call();
+  balance = balance / Math.pow(10, underlyingDecimals);
+  console.log(`Borrow balance is ${balance} ${assetNameDAI}`);
 
-    var response = {
-      "text": " Borrow balance of DAI " + balance
+  var response = {
+    "text": " Borrow balance of DAI " + balance
+  };
 
-    };
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
-
-  })().catch(console.error);
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+  return res;
 };
 
 
 
 exports.calculateLiquidity = async function (req, res) {
 
-  (async function (error) {
-    const ethDecimals = 18; // Ethereum has 18 decimal places
+  const ethDecimals = 18; // Ethereum has 18 decimal places
 
 
+  console.log('Calculating your liquid assets in the protocol...');
+  let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(myWalletAddress).call();
+  liquidity = liquidity / 1e18;
 
+  console.log('Fetching cETH collateral factor...');
+  let { 1: collateralFactor } = await comptroller.methods.markets(cEthAddress).call();
+  collateralFactor = (collateralFactor / 1e18) * 100; // Convert to percent
 
-    console.log('Calculating your liquid assets in the protocol...');
-    let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(myWalletAddress).call();
-    liquidity = liquidity / 1e18;
+  console.log(`Fetching ${assetNameDAI} price from the price feed...`);
+  let underlyingPriceInUsd = await priceFeed.methods.price(assetNameDAI).call();
+  underlyingPriceInUsd = underlyingPriceInUsd / 1e6; // Price feed provides price in USD with 6 decimal places
 
-    console.log('Fetching cETH collateral factor...');
-    let { 1: collateralFactor } = await comptroller.methods.markets(cEthAddress).call();
-    collateralFactor = (collateralFactor / 1e18) * 100; // Convert to percent
+  console.log(`Fetching borrow rate per block for ${assetNameDAI} borrowing...`);
+  let borrowRate = await cToken.methods.borrowRatePerBlock().call();
+  borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
 
-    console.log(`Fetching ${assetName} price from the price feed...`);
-    let underlyingPriceInUsd = await priceFeed.methods.price(assetName).call();
-    underlyingPriceInUsd = underlyingPriceInUsd / 1e6; // Price feed provides price in USD with 6 decimal places
+  console.log(`\nYou have ${liquidity} of LIQUID assets (worth of USD) pooled in the protocol.`);
+  console.log(`You can borrow up to ${collateralFactor}% of your TOTAL collateral supplied to the protocol as ${assetNameDAI}.`);
+  console.log(`1 ${assetNameDAI} == ${underlyingPriceInUsd.toFixed(6)} USD`);
+  console.log(`You can borrow up to ${liquidity / underlyingPriceInUsd} ${assetNameDAI} from the protocol.`);
+  console.log(`NEVER borrow near the maximum amount because your account will be instantly liquidated.`);
+  console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetNameDAI} per block.\nThis is based on the current borrow rate.\n`);
 
-    console.log(`Fetching borrow rate per block for ${assetName} borrowing...`);
-    let borrowRate = await cToken.methods.borrowRatePerBlock().call();
-    borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
+  var response = {
+    "text": ' You can borrow up to :' + liquidity / underlyingPriceInUsd + ' units of ' + assetNameDAI +' from the protocol '
+  };
 
-    console.log(`\nYou have ${liquidity} of LIQUID assets (worth of USD) pooled in the protocol.`);
-    console.log(`You can borrow up to ${collateralFactor}% of your TOTAL collateral supplied to the protocol as ${assetName}.`);
-    console.log(`1 ${assetName} == ${underlyingPriceInUsd.toFixed(6)} USD`);
-    console.log(`You can borrow up to ${liquidity / underlyingPriceInUsd} ${assetName} from the protocol.`);
-    console.log(`NEVER borrow near the maximum amount because your account will be instantly liquidated.`);
-    console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetName} per block.\nThis is based on the current borrow rate.\n`);
-
-    var response = {
-      "text": " You can borrow up to ${liquidity / underlyingPriceInUsd} ${assetName} from the protocol "
-    };
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
-
-  })().catch(console.error);
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+  return res;
 };
 
 
 exports.checkAccountcETHBalance = async function (req, res) {
 
-  (async function (error) {
-    const ethDecimals = 18; // Ethereum has 18 decimal places
+  const ethDecimals = 18; // Ethereum has 18 decimal places
+
+  console.log('Calculating your liquid assets in the protocol...');
+  let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(myWalletAddress).call();
+  liquidity = liquidity / 1e18;
 
 
+  var response = {
+    "text": " total balance of cTokens not engaged in borrowing/lending: " + liquidity + " (worth in USD at the current exchange rates)"
+  };
 
-
-    console.log('Calculating your liquid assets in the protocol...');
-    let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(myWalletAddress).call();
-    liquidity = liquidity / 1e18;
-
-
-    var response = {
-      "text": " total balance of cTokens not engaged in borrowing/lending: " + liquidity + " (worth in USD at the current exchange rates)"
-    };
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
-
-  })().catch(console.error);
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+  return res;
 };
 
 
@@ -304,33 +271,28 @@ exports.getCollateralFactor = async function (req, res) {
   web3.eth.accounts.wallet.add(privateKey);
   const wallet = web3.eth.accounts.wallet[0];
   const myWalletAddress = web3.eth.accounts.wallet[0].address;
-  //const walletBalance = web3.eth.accounts.wallet[0];
-  // Main Net Contract for cETH (the supply process is different for cERC20 tokens)
 
 
-  (async function (error) {
+  const ethDecimals = 18; // Ethereum has 18 decimal places
 
-    const ethDecimals = 18; // Ethereum has 18 decimal places
-
-    //const ethBalanceWei = await wallet.getBalance()
-    //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
+  //const ethBalanceWei = await wallet.getBalance()
+  //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
 
 
 
-    console.log('Fetching cETH collateral factor...');
-    let { 1: collateralFactor } = await comptroller.methods.markets(cEthAddress).call();
-    collateralFactor = (collateralFactor / 1e18) * 100; // Convert to percent
+  console.log('Fetching cETH collateral factor...');
+  let { 1: collateralFactor } = await comptroller.methods.markets(cEthAddress).call();
+  collateralFactor = (collateralFactor / 1e18) * 100; // Convert to percent
 
-    var response = {
-      "text": "collateral factor for cETH is : " + collateralFactor + " percent"
+  var response = {
+    "text": "collateral factor for cETH is : " + collateralFactor + " percent"
 
-    };
+  };
 
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
-
-  })().catch(console.error);
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+  return res;
 };
 
 exports.exchangeRateETHcETH = async function (req, res) {
@@ -338,87 +300,113 @@ exports.exchangeRateETHcETH = async function (req, res) {
   web3.eth.accounts.wallet.add(privateKey);
   const wallet = web3.eth.accounts.wallet[0];
   const myWalletAddress = web3.eth.accounts.wallet[0].address;
-  //const walletBalance = web3.eth.accounts.wallet[0];
-  // Main Net Contract for cETH (the supply process is different for cERC20 tokens)
 
+  const ethDecimals = 18; // Ethereum has 18 decimal places
 
-  (async function (error) {
+  let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
+  exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
 
-    const ethDecimals = 18; // Ethereum has 18 decimal places
+  var response = {
+    "text": " exchange rate (from ETH to cETH) of: " + exchangeRateCurrent
 
-    //const ethBalanceWei = await wallet.getBalance()
-    //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
+  };
 
-    let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
-    exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
-
-    var response = {
-      "text": " exchange rate (from cETH to ETH) of: " + exchangeRateCurrent
-
-    };
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
-
-  })().catch(console.error);
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+  return res;
 };
 
 
+exports.borrowRateDAI = async function (req, res) {
+
+  const ethDecimals = 18; // Ethereum has 18 decimal places
+
+  console.log(`Fetching borrow rate per block for ${assetNameDAI} borrowing...`);
+  let borrowRate = await cToken.methods.borrowRatePerBlock().call();
+  borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
+ 
+  console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetNameDAI} per block.\nThis is based on the current borrow rate.\n`);
+
+  var response = {
+    "text": ' borrow rate of ' +  assetNameDAI +' is: ' + borrowRate
+  };
+
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+  return res;
+};
+
+
+
+exports.borrowRateETH = async function (req, res) {
+
+  const ethDecimals = 18; // Ethereum has 18 decimal places
+
+  console.log(`Fetching borrow rate per block for ${assetNameETH} borrowing...`);
+  let borrowRate = await cEth.methods.borrowRatePerBlock().call();
+  borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
+ 
+  console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetNameDAI} per block.\nThis is based on the current borrow rate.\n`);
+
+  var response = {
+    "text": ' borrow rate of ' +  assetNameETH +' is: ' + borrowRate
+  };
+
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+  return res;
+};
 
 exports.exchangeRateETHUSD = async function (req, res) {
 
   web3.eth.accounts.wallet.add(privateKey);
   const wallet = web3.eth.accounts.wallet[0];
   const myWalletAddress = web3.eth.accounts.wallet[0].address;
-  //const walletBalance = web3.eth.accounts.wallet[0];
-  // Main Net Contract for cETH (the supply process is different for cERC20 tokens)
 
 
-  (async function (error) {
+  const ethDecimals = 18; // Ethereum has 18 decimal places
 
-    const ethDecimals = 18; // Ethereum has 18 decimal places
+  let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
+  exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
 
-    let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
-    exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
+  //const ethBalanceWei = await wallet.getBalance()
+  //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
+  let underlyingPriceInUsd = await priceFeed.methods.getUnderlyingPrice(cEthAddress).call();
+  underlyingPriceInUsd = underlyingPriceInUsd / 1e18; // Price feed provides price in USD with 6 decimal places
+  underlyingPriceInUsdETH = underlyingPriceInUsd // exchangeRateCurrent ;
 
-    //const ethBalanceWei = await wallet.getBalance()
-    //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
-    let underlyingPriceInUsd = await priceFeed.methods.getUnderlyingPrice(cEthAddress).call();
-    underlyingPriceInUsd = underlyingPriceInUsd / 1e18; // Price feed provides price in USD with 6 decimal places
-    underlyingPriceInUsdETH = underlyingPriceInUsd // exchangeRateCurrent ;
+  var response = {
+    "text": " exchange rate (from ETH to USD) of: " + underlyingPriceInUsdETH
 
-    var response = {
-      "text": " exchange rate (from ETH to USD) of: " + underlyingPriceInUsdETH
+  };
 
-    };
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
 
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
-
-  })().catch(console.error);
+  return res;
 };
 
 
 exports.checkCTokenBalance = async function (req, res) {
 
-  (async function (error) {
 
-    let cTokenBalance = await cEth.methods.balanceOf(myWalletAddress).call() / 1e8;
+  let cTokenBalance = await cEth.methods.balanceOf(myWalletAddress).call() / 1e8;
 
-    //const ethBalanceWei = await wallet.getBalance()
-    //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
+  //const ethBalanceWei = await wallet.getBalance()
+  //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
 
-    var response = {
-      "text": " balance in cETH " + cTokenBalance
-    };
+  var response = {
+    "text": " balance in cETH " + cTokenBalance
+  };
 
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
-
-  })().catch(console.error);
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+  return res;
 };
 
 
