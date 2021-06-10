@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@awaitjs/express": "^0.7.2",
     "@compound-finance/compound-js": "^0.2.8",
     "child_process": "^1.0.2",
     "ethereumjs-testrpc": "^6.0.3",

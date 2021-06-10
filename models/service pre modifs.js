@@ -1,3 +1,6 @@
+const url = require('url');
+// const ganache = require("ganache");
+// const provider = new ethers.providers.Web3Provider(ganache.provider());
 
 const config = require('./config.json');
 const Web3 = require('web3');
@@ -85,10 +88,25 @@ exports.startGanache = async function (req, res) {
       };
       res.end(JSON.stringify(response))
     });
-
-  return res;
-};
-
+};    /*
+  const startChain = async () => {
+    const ganache = Ganache.provider({
+      fork: MAINNET_NODE_URL,
+      network_id: 1,
+      accounts: [
+        {
+          secretKey: privateKeyBuffer,
+          balance: ethers.utils.hexlify(ethers.utils.parseEther("10000")),
+        },
+      ],
+    })
+  
+    const provider = new ethers.providers.Web3Provider(ganache)
+    const wallet = new ethers.Wallet(privateKeyBuffer, provider)
+  
+    return wallet
+  }
+  */
 exports.startAndCheckEther = async function (req, res) {
   //const provider = new ethers.providers.Web3Provider(ganache.provider())
   web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
@@ -106,27 +124,40 @@ exports.startAndCheckEther = async function (req, res) {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(response));
   })
+  /* 
+  //const wallet = new ethers.Wallet(privateKeyBuffer, provider)
+   
+  //wallet = await startChain()
+  const ethBalanceWei = await wallet.getBalance()
+  const ethBalance = ethers.utils.formatEther(ethBalanceWei)
+  let myWalletAddress = wallet.getAddress();
+  myWalletAddress.then((address) => {
+  
+      console.log('wallet address', address);
+  });
+  */
 
-  return res;
+  //res.send(stderr)
 };
 
 
-exports.SupplyETH = async function (amount, res) {
-  
+exports.SupplyETH = async function (req, res) {
 
-    console.log('Supplying ' + amount + ' units of ETH to the Compound Protocol...', '\n');
+  //web3.eth.accounts.wallet.add( privateKey);
+  //const wallet = web3.eth.accounts.wallet[0];
+  //const myWalletAddress = web3.eth.accounts.wallet[0].address;
+
+  (async function (error) {
+
+    console.log('Supplying ETH to the Compound Protocol...', '\n');
     const ethDecimals = 18; // Ethereum has 18 decimal places
-    amountToString = amount.toString();
+
 
     await cEth.methods.mint().send({
       from: myWalletAddress,
       gasLimit: web3.utils.toHex(800000),
       gasPrice: web3.utils.toHex(20000000000), // use ethgasstation.info (mainnet only)
-      value: web3.utils.toHex(web3.utils.toWei(amountToString, 'ether'))
-    }).then((result) => {
-      console.log('done')
-    }).catch((error) => {
-      console.error('[supply] error:', error);
+      value: web3.utils.toHex(web3.utils.toWei('0.5', 'ether'))
     });
 
 
@@ -138,16 +169,16 @@ exports.SupplyETH = async function (amount, res) {
     let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
     exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
 
-    var error = {
+    var response = {
       "text": " balance in cETH " + cTokenBalance + "; balance that was exchange at the rate (from cETH to ETH) of: " + exchangeRateCurrent
+
     };
 
-   
-  
-  //res.end(JSON.stringify(error));
-  res = JSON.stringify(error);
-  console.log(res)
-  return res ;
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(response));
+
+  })().catch(console.error);
 };
 
 
@@ -192,7 +223,7 @@ exports.borrowDAI = async function (req, res) {
     console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetName} per block.\nThis is based on the current borrow rate.\n`);
 
     var response = {
-      "text": " Borrow balance of DAI borrowed "
+      "text": " Borrow balance of DAI borrowed " 
 
     };
 
@@ -320,7 +351,7 @@ exports.getCollateralFactor = async function (req, res) {
     console.log('Fetching cETH collateral factor...');
     let { 1: collateralFactor } = await comptroller.methods.markets(cEthAddress).call();
     collateralFactor = (collateralFactor / 1e18) * 100; // Convert to percent
-
+    
     var response = {
       "text": "collateral factor for cETH is : " + collateralFactor + " percent"
 

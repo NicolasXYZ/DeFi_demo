@@ -1,7 +1,20 @@
-const hostname = '127.0.0.1';
-const port = 3000;
-const server = require('./controller.js');
+const express = require('express');
+const app = express();
+const { addAsync } = require('@awaitjs/express');
+addAsync(app);
 
-server.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}/`);
-});
+
+port = process.env.PORT || 3000;
+
+var routes = require('./controller.js'); //importing route
+routes(app); //register the route
+
+
+app.listen(port);
+
+
+console.log('DeFi sandbox demo server started on: ' + port);
+
+app.use(function(req, res) {
+    res.status(404).send({url: req.originalUrl + ' not found'})
+  });
