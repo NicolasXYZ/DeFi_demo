@@ -95,17 +95,6 @@ exports.startGanache = async function (req, res) {
   return res;
 };
 
-exports.startAndCheckEther = async function (user, res) {
-  //const provider = new ethers.providers.Web3Provider(ganache.provider())
-  //web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
-    let ETHBalance = await web3.eth.getBalance(AccountList[user]);
-  var response = {
-    "text": "balance in Ether in our wallet: " + web3.utils.fromWei(ETHBalance, "ether")
-  };
-  res = web3.utils.fromWei(ETHBalance, "ether");
-  console.log(JSON.stringify(response))
-  return res;
-};
 
 
 exports.SupplyETH = async function ( amountAndUser, user, res) {
@@ -138,18 +127,24 @@ exports.SupplyETH = async function ( amountAndUser, user, res) {
 
 
 
-exports.borrowDAI = async function (amount, res) {
+exports.borrowDAI = async function ( amountAndUser, user, res) {
+  amount = amountAndUser[0];
+  user = amountAndUser[1];
 
   console.log('\nEntering market (via Comptroller contract) for ETH (as collateral)...');
   let markets = [cEthAddress]; // This is the cToken contract(s) for your collateral
-  await comptroller.methods.enterMarkets(markets).send(fromMyWallet).then((result) => {
+  await comptroller.methods.enterMarkets(markets).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(300000000)
+  }).then((result) => {
     console.log('done')
   }).catch((error) => {
     console.error('[entering market] error:', error);
   });
 
   console.log('Calculating your liquid assets in the protocol...');
-  let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(myWalletAddress).call();
+  let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(AccountList[user]).call();
   liquidity = liquidity / 1e18;
 
   console.log(`Fetching ${assetNameDAI} price from the price feed...`);
@@ -169,7 +164,11 @@ exports.borrowDAI = async function (amount, res) {
   const underlyingToBorrow = amount;
   console.log(`Now attempting to borrow ${underlyingToBorrow} ${assetNameDAI}...`);
   const scaledUpBorrowAmount = (underlyingToBorrow * Math.pow(10, underlyingDecimals)).toString();
-  await cToken.methods.borrow(scaledUpBorrowAmount).send(fromMyWallet).then((result) => {
+  await cToken.methods.borrow(scaledUpBorrowAmount).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(300000000)
+  }).then((result) => {
     console.log('done')
   }).catch((error) => {
     console.error('[borrow] error:', error);
@@ -177,18 +176,28 @@ exports.borrowDAI = async function (amount, res) {
   var response = {
     "text": " Borrow balance of DAI borrowed "
   };
+  
   res = JSON.stringify(response);
+  console.log(res)
   return res;
 };
 
 
+exports.startAndCheckEther = async function (user, res) {
+  //const provider = new ethers.providers.Web3Provider(ganache.provider())
+  //web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
+    let ETHBalance = await web3.eth.getBalance(AccountList[user]);
+  var response = {
+    "text": "balance in Ether in our wallet: " + web3.utils.fromWei(ETHBalance, "ether")
+  };
+  res = web3.utils.fromWei(ETHBalance, "ether");
+  console.log(JSON.stringify(response))
+  return res;
+};
 
-exports.checkDAIBalance = async function (req, res) {
+exports.checkDAIBalance = async function (user, res) {
 
-  const ethDecimals = 18; // Ethereum has 18 decimal places
-
-
-  let balance = await cToken.methods.borrowBalanceCurrent(myWalletAddress).call();
+  let balance = await cToken.methods.borrowBalanceCurrent(AccountList[user]).call();
   balance = balance / Math.pow(10, underlyingDecimals);
   console.log(`Borrow balance is ${balance} ${assetNameDAI}`);
 
@@ -196,9 +205,8 @@ exports.checkDAIBalance = async function (req, res) {
     "text": " Borrow balance of DAI " + balance
   };
 
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(response));
+  res = balance
+  console.log(JSON.stringify(response))
   return res;
 };
 
