@@ -178,13 +178,18 @@ exports.borrowDAI = async function ( amountAndUser, user, res) {
   console.log(`NEVER borrow near the maximum amount because your account will be instantly liquidated.`);
   console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetNameDAI} per block.\nThis is based on the current borrow rate.\n`);
 
-  const underlyingToBorrow = amount;
-  console.log(`Now attempting to borrow ${underlyingToBorrow} ${assetNameDAI}...`);
-  const scaledUpBorrowAmount = (underlyingToBorrow * Math.pow(10, underlyingDecimals)).toString();
-  await cToken.methods.borrow(scaledUpBorrowAmount).send({
+
+  
+const decimals = web3.utils.toBN(18);    
+const tokenAmount = web3.utils.toBN(amount);
+const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+
+  await cToken.methods.borrow(tokenAmountHex).send({
     from: AccountList[user],
     gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
     gasPrice: web3.utils.toHex(300000000)
+    //gasPrice: web3.utils.toHex(300)
   }).then((result) => {
     console.log('done')
   }).catch((error) => {
@@ -228,9 +233,9 @@ exports.startAndCheckEther = async function (user, res) {
   //web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
     let ETHBalance = await web3.eth.getBalance(AccountList[user]);
   var response = {
-    "text": "balance in Ether in our wallet: " + web3.utils.fromWei(ETHBalance, "mether")
+    "text": "balance in Ether in our wallet: " + web3.utils.fromWei(ETHBalance, "kether")
   };
-  res = web3.utils.fromWei(ETHBalance, "mether");
+  res = web3.utils.fromWei(ETHBalance, "kether");
   console.log(JSON.stringify(response))
   return res;
 };

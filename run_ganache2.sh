@@ -26,7 +26,7 @@ set -x
   npx ganache-cli \
   -f https://mainnet.infura.io/v3/ccb0d808a5b74dcb9db7668888c8a8a6 \
   -m "music shock pony culture color hand walk favorite session love basic pyramid" \
-  -i 1 -e 100000000
+  -i 1 -e 100000
   --account_keys_path "./keys" --gasLimit 0xfffffffffff --port "$ganache_port"  > /dev/null &
   ganache_pid=$!
 

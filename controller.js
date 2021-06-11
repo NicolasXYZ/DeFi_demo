@@ -16,16 +16,16 @@ module.exports = function (app) {
             return res.sendStatus(400);
         });
     });
-        
+
     app.route('/UserSelection/:userID').get((req, res) => {
-        if (isNaN(req.params.userID)||(req.params.userID<0)||(req.params.userID>9)) {
+        if (isNaN(req.params.userID) || (req.params.userID < 0) || (req.params.userID > 9)) {
             return res.sendStatus(400);
         }
         app.locals.user = req.params.userID
         console.dir((app.locals.user));
         return res.sendStatus(200);
     });
-        
+
     var service = require('./service.js');
 
     app.route('/checkAccount/ETHBalance').get(async (req, res) => {
@@ -50,7 +50,7 @@ module.exports = function (app) {
 
     app.route('/checkAccount/cETHBalance').get(async (req, res) => {
         await service.checkCTokenBalance(parseInt(app.locals.user)).then((result) => {
-            return res.send((result/ Math.pow(10, 6)).toString());
+            return res.send((result / Math.pow(10, 3)).toString());
         }).catch((error) => {
             console.log(error)
             return res.sendStatus(400);
@@ -68,7 +68,7 @@ module.exports = function (app) {
 
     app.route('/calculateLiquidity').get(async (req, res) => {
         await service.calculateLiquidity(parseInt(app.locals.user)).then((result) => {
-            return res.send((result/ Math.pow(10, 6).toString()));
+            return res.send((result / Math.pow(10, 3)).toString());
         }).catch((error) => {
             console.log(error)
             return res.sendStatus(400);
@@ -86,7 +86,9 @@ module.exports = function (app) {
 
     app.route('/checkAccount/DAIBalance').get(async (req, res) => {
         await service.checkDAIBalance(parseInt(app.locals.user)).then((result) => {
-            return res.send((result/ Math.pow(10, 6).toString()));
+                return res.send((result/ Math.pow(10, 3)).toString());
+            //return res.send((result).toString());
+
         }).catch((error) => {
             console.log(error)
             return res.sendStatus(400);
@@ -106,7 +108,7 @@ module.exports = function (app) {
         if (isNaN(req.params.amount)) {
             return res.sendStatus(400);
         }
-        let newInput = [req.params.amount * Math.pow(10, 6), parseInt(app.locals.user)];
+        let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
         await service.SupplyETH(newInput).then((result) => {
             return res.sendStatus(200);
         }).catch((error) => {
@@ -118,7 +120,7 @@ module.exports = function (app) {
         if (isNaN(req.params.amount)) {
             return res.sendStatus(400);
         }
-        let newInput = [req.params.amount * Math.pow(10, 6), parseInt(app.locals.user)];
+        let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
         await service.borrowDAI(newInput).then((result) => {
             return res.sendStatus(200);
         }).catch((error) => {
@@ -205,12 +207,12 @@ module.exports = function (app) {
 
 
 
-        // needed ????
+    // needed ????
 
     app.route('/checkCTokenBalance')
-    .get(service.checkAccountcETHBalance)
+        .get(service.checkAccountcETHBalance)
 
     app.route('/getCollateralFactor/cETH')
-    .get(service.getCollateralFactor)
+        .get(service.getCollateralFactor)
 
 };
