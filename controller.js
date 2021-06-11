@@ -27,6 +27,45 @@ module.exports = function (app) {
         });
     });
 
+
+
+    app.route('/exchangeRateETHUSD').get(async (req, res) => {
+        await service.exchangeRateETHUSD().then((result) => {
+            return res.send(result.toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
+    app.route('/checkAccount/cETHBalance').get(async (req, res) => {
+        await service.checkCTokenBalance(parseInt(app.locals.user)).then((result) => {
+            return res.send(result.toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
+
+    app.route('/calculateLiquidity').get(async (req, res) => {
+        await service.calculateLiquidity(parseInt(app.locals.user)).then((result) => {
+            return res.send(result.toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
+    app.route('/exchangeRateETHcETH').get(async (req, res) => {
+        await service.exchangeRateETHcETH().then((result) => {
+            return res.send(result.toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
     app.route('/checkAccount/DAIBalance').get(async (req, res) => {
         await service.checkDAIBalance(parseInt(app.locals.user)).then((result) => {
             return res.send(result.toString());
@@ -48,7 +87,6 @@ module.exports = function (app) {
         });
     });
 
-
     app.route('/borrowDAI/:amount').get(async (req, res) => {
         if (isNaN(req.params.amount)) {
             return res.sendStatus(400);
@@ -66,7 +104,13 @@ module.exports = function (app) {
         app.route('/supplyRateDAI')
             .get(service.supplyRateDAI)
     
+    app.route('/globalAggregates/DAI')
+        .get(service.globalAggregatesDAI)
     
+
+    app.route('/globalAggregates/cETH')
+        .get(service.globalAggregatescETH)
+
         app.route('/supplyRateETH')
             .get(service.borrowRateETH)
     
@@ -133,34 +177,24 @@ module.exports = function (app) {
     ////////////////////////////////////////
 
 
+
     app.route('/borrowRateETH')
         .get(service.borrowRateETH)
 
     app.route('/borrowRateDAI')
         .get(service.borrowRateDAI)
 
-    app.route('/exchangeRateETHcETH')
-        .get(service.exchangeRateETHcETH)
 
 
-    app.route('/checkAccount/cETHBalance')
-        .get(service.checkCTokenBalance)
+
+        // needed ????
+
+    app.route('/checkCTokenBalance')
+    .get(service.checkAccountcETHBalance)
+
+    app.route('/getCollateralFactor/cETH')
+    .get(service.getCollateralFactor)
 
     app.route('/startGanache')
         .get(service.startGanache)
-
-    app.route('/checkCTokenBalance')
-        .get(service.checkAccountcETHBalance)
-
-    app.route('/getCollateralFactor/cETH')
-        .get(service.getCollateralFactor)
-
-    app.route('/exchangeRateETHUSD')
-        .get(service.exchangeRateETHUSD)
-
-
-
-    app.route('/calculateLiquidity')
-        .get(service.calculateLiquidity)
-
 };

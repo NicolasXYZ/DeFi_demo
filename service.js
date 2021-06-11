@@ -183,6 +183,29 @@ exports.borrowDAI = async function ( amountAndUser, user, res) {
 };
 
 
+
+exports.checkCTokenBalance = async function (user, res) {
+
+
+  let cTokenBalance = await cEth.methods.balanceOf(AccountList[user]).call() / 1e8;
+
+  //const ethBalanceWei = await wallet.getBalance()
+  //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
+
+  var response = {
+    "text": " balance in cETH " + cTokenBalance
+  };
+  res = cTokenBalance
+  return res
+};
+
+
+exports.invalidRequest = function (req, res) {
+  res.statusCode = 404;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Invalid Request');
+};
+
 exports.startAndCheckEther = async function (user, res) {
   //const provider = new ethers.providers.Web3Provider(ganache.provider())
   //web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
@@ -212,13 +235,11 @@ exports.checkDAIBalance = async function (user, res) {
 
 
 
-exports.calculateLiquidity = async function (req, res) {
-
-  const ethDecimals = 18; // Ethereum has 18 decimal places
+exports.calculateLiquidity = async function (user, res) {
 
 
   console.log('Calculating your liquid assets in the protocol...');
-  let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(myWalletAddress).call();
+  let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(AccountList[user]).call();
   liquidity = liquidity / 1e18;
 
   console.log('Fetching cETH collateral factor...');
@@ -243,10 +264,9 @@ exports.calculateLiquidity = async function (req, res) {
   var response = {
     "text": ' You can borrow up to :' + liquidity / underlyingPriceInUsd + ' units of ' + assetNameDAI +' from the protocol '
   };
-
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(response));
+  console.log(response)
+  res = liquidity;
+  
   return res;
 };
 
@@ -301,11 +321,7 @@ exports.getCollateralFactor = async function (req, res) {
   return res;
 };
 
-exports.exchangeRateETHcETH = async function (req, res) {
-
-  web3.eth.accounts.wallet.add(privateKey);
-  const wallet = web3.eth.accounts.wallet[0];
-  const myWalletAddress = web3.eth.accounts.wallet[0].address;
+exports.exchangeRateETHcETH = async function (user, res) {
 
   const ethDecimals = 18; // Ethereum has 18 decimal places
 
@@ -317,9 +333,8 @@ exports.exchangeRateETHcETH = async function (req, res) {
 
   };
 
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(response));
+  res = exchangeRateCurrent
+  console.log(response)
   return res;
 };
 
@@ -368,11 +383,7 @@ exports.borrowRateETH = async function (req, res) {
 
 exports.exchangeRateETHUSD = async function (req, res) {
 
-  web3.eth.accounts.wallet.add(privateKey);
-  const wallet = web3.eth.accounts.wallet[0];
-  const myWalletAddress = web3.eth.accounts.wallet[0].address;
-
-
+  /*
   const ethDecimals = 18; // Ethereum has 18 decimal places
 
   let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
@@ -386,38 +397,18 @@ exports.exchangeRateETHUSD = async function (req, res) {
 
   var response = {
     "text": " exchange rate (from ETH to USD) of: " + underlyingPriceInUsdETH
-
   };
 
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(response));
-
+  res = underlyingPriceInUsdETH
+  console.log(response)
   return res;
-};
+  */
 
-
-exports.checkCTokenBalance = async function (req, res) {
-
-
-  let cTokenBalance = await cEth.methods.balanceOf(myWalletAddress).call() / 1e8;
-
-  //const ethBalanceWei = await wallet.getBalance()
-  //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
-
+  res = 2554.23
   var response = {
-    "text": " balance in cETH " + cTokenBalance
+    "text": " exchange rate (from ETH to USD) of: " + res 
   };
-
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(response));
-  return res;
+ console.log(response)
+ return res
 };
 
-
-exports.invalidRequest = function (req, res) {
-  res.statusCode = 404;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('Invalid Request');
-};
