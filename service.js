@@ -74,25 +74,42 @@ exports.startGanache = async function (req, res) {
 
 
   var exec = require('child_process').exec, child;
+  /*
+  child1 = exec('chmod +x ./run_ganache2.sh ',
+  function (error, stdout, stderr) {
+    console.log('stdout: ' + stdout);
+    console.log('stderr: ' + stderr);
+
+    if (error !== null) {
+      console.log('exec error: ' + error);
+      err = error.toString();
+    }
+    console.log('chmod done');
+    var response = {
+      "text": "chmod really done"
+    };
+    console.log(response)
+  });
+  */
   child = exec('sh ./run_ganache2.sh',
     function (error, stdout, stderr) {
       console.log('stdout: ' + stdout);
       console.log('stderr: ' + stderr);
-
-
       if (error !== null) {
         console.log('exec error: ' + error);
         err = error.toString();
-        res.end(error.toString());
+        res = err
+        return res
       }
       console.log('Ganache started');
       var response = {
-        "text": "Ganache started "
+        "text": "Ganache really started "
       };
-      res.end(JSON.stringify(response))
+      console.log(response)
+      res = response
+      return res
     });
 
-  return res;
 };
 
 
@@ -211,9 +228,9 @@ exports.startAndCheckEther = async function (user, res) {
   //web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
     let ETHBalance = await web3.eth.getBalance(AccountList[user]);
   var response = {
-    "text": "balance in Ether in our wallet: " + web3.utils.fromWei(ETHBalance, "ether")
+    "text": "balance in Ether in our wallet: " + web3.utils.fromWei(ETHBalance, "mether")
   };
-  res = web3.utils.fromWei(ETHBalance, "ether");
+  res = web3.utils.fromWei(ETHBalance, "mether");
   console.log(JSON.stringify(response))
   return res;
 };
@@ -345,7 +362,8 @@ exports.borrowRateDAI = async function (req, res) {
 
   console.log(`Fetching borrow rate per block for ${assetNameDAI} borrowing...`);
   let borrowRate = await cToken.methods.borrowRatePerBlock().call();
-  borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
+  //borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
+  borrowRate = (borrowRate / Math.pow(10, underlyingDecimals))*Math.pow(10, 9);
  
   console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetNameDAI} per block.\nThis is based on the current borrow rate.\n`);
 
@@ -353,9 +371,8 @@ exports.borrowRateDAI = async function (req, res) {
     "text": ' borrow rate of ' +  assetNameDAI +' is: ' + borrowRate
   };
 
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(response));
+  res = borrowRate
+  console.log(response)
   return res;
 };
 
@@ -363,21 +380,18 @@ exports.borrowRateDAI = async function (req, res) {
 
 exports.borrowRateETH = async function (req, res) {
 
-  const ethDecimals = 18; // Ethereum has 18 decimal places
-
   console.log(`Fetching borrow rate per block for ${assetNameETH} borrowing...`);
   let borrowRate = await cEth.methods.borrowRatePerBlock().call();
-  borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
+  borrowRate = (borrowRate / Math.pow(10, underlyingDecimals))*Math.pow(10, 9);
  
-  console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetNameDAI} per block.\nThis is based on the current borrow rate.\n`);
+  console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetNameETH} per block.\nThis is based on the current borrow rate.\n`);
 
   var response = {
     "text": ' borrow rate of ' +  assetNameETH +' is: ' + borrowRate
   };
 
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify(response));
+  res = borrowRate
+  console.log(response)
   return res;
 };
 
