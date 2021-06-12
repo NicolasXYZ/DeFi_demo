@@ -176,6 +176,19 @@ module.exports = function (app) {
         });
     });
 
+
+    app.route('/redeemcDAI/:amount').get(async (req, res) => {
+        if (isNaN(req.params.amount)) {
+            return res.sendStatus(400);
+        }
+        let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+        await service.redeemDAI(newInput).then((result) => {
+            return res.sendStatus(200);
+        }).catch((error) => {
+            return res.sendStatus(400);
+        });
+    });
+
     app.route('/borrowDAI/:amount').get(async (req, res) => {
         if (isNaN(req.params.amount)) {
             return res.sendStatus(400);

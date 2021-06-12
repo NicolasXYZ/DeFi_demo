@@ -275,6 +275,53 @@ exports.redeemETH = async function (amountAndUser, user, res) {
   return res;
 };
 
+
+exports.redeemDAI = async function (amountAndUser, user, res) {
+  amount = amountAndUser[0];
+  user = amountAndUser[1];
+  console.log('Redeeming ' + amount + ' units of cETH to the Compound Protocol...', '\n');
+  //const ethDecimals = 18; // Ethereum has 18 decimal places
+  //amountToString = amount.toString();
+
+  const decimals = web3.utils.toBN(8);
+  const tokenAmount = web3.utils.toBN(amount);
+  const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+  
+  await underlying.methods.approve(
+    cTokenAddress, tokenAmountHex
+  ).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(300000), // use ethgasstation.info (mainnet only)
+    //value: web3.utils.toHex(web3.utils.toWei(amountToString, 'ether'))
+  }).then((result) => {
+    console.log('approved')
+  }).catch((error) => {
+    console.error('[approving redeem] error:', error);
+  });
+
+  await cToken.methods.redeem(tokenAmountHex).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(300000), // use ethgasstation.info (mainnet only)
+    //value: web3.utils.toHex(web3.utils.toWei(amountToString, 'ether'))
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[redeem] error:', error);
+  });
+  let cTokenBalance = await cToken.methods.balanceOf(AccountList[user]).call()  / 1e8;
+  let exchangeRateCurrent = await cToken.methods.exchangeRateCurrent().call();
+  exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + underlyingDecimals - 8);
+  var response = {
+    "text": " new balance of: " + cTokenBalance + " of cDAIs; balance that was exchange at the rate (from DAI to cDAI) of: " + exchangeRateCurrent
+  };
+  res = 'good'
+  console.log(res)
+  console.log(response)
+  return res;
+};
+
 exports.borrowDAI = async function (amountAndUser, user, res) {
   amount = amountAndUser[0];
   user = amountAndUser[1];
