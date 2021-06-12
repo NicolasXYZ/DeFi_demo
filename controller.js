@@ -120,7 +120,19 @@ module.exports = function (app) {
         });
     });
 
+
     app.route('/checkAccount/DAIBalance').get(async (req, res) => {
+        await service.checknonborrowedDAIBalance(parseInt(app.locals.user)).then((result) => {
+                return res.send((result/ Math.pow(10, 3)).toString());
+            //return res.send((result).toString());
+
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
+    app.route('/checkAccount/borrowedDAIBalance').get(async (req, res) => {
         await service.checkDAIBalance(parseInt(app.locals.user)).then((result) => {
                 return res.send((result/ Math.pow(10, 3)).toString());
             //return res.send((result).toString());
@@ -146,6 +158,18 @@ module.exports = function (app) {
         }
         let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
         await service.SupplyETH(newInput).then((result) => {
+            return res.sendStatus(200);
+        }).catch((error) => {
+            return res.sendStatus(400);
+        });
+    });
+
+    app.route('/redeemcETH/:amount').get(async (req, res) => {
+        if (isNaN(req.params.amount)) {
+            return res.sendStatus(400);
+        }
+        let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+        await service.redeemETH(newInput).then((result) => {
             return res.sendStatus(200);
         }).catch((error) => {
             return res.sendStatus(400);
