@@ -68,6 +68,64 @@ const fromMyWallet = {
 //const privateKeyBuffer = Buffer.from(PRIV_KEY, 'hex')
 
 
+exports.initAllfunctions = async function (req, res) {
+
+  let markets = [cEthAddress];
+  var i=0
+  amount = 1
+  amountToString = amount.toString();
+
+  const decimals = web3.utils.toBN(18);    
+  const tokenAmount = web3.utils.toBN(amount* Math.pow(10, 3));
+  const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+  
+  for (i = 0; i < 10; i++) {
+ 
+  await cEth.methods.mint().send({
+    from: AccountList[i],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(0), // use ethgasstation.info (mainnet only)
+    value: web3.utils.toHex(web3.utils.toWei(amountToString, 'kether'))
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[supply] error:', error);
+  });
+
+  // This is the cToken contract(s) for your collateral
+  await comptroller.methods.enterMarkets(markets).send({
+    from: AccountList[i],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(0)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[entering market] error:', error);
+  });
+
+
+    await cToken.methods.borrow(tokenAmountHex).send({
+      from: AccountList[i],
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(0)
+      //gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      console.log('done')
+    }).catch((error) => {
+      console.error('[borrow] error:', error);
+    });
+} 
+
+var response = {
+  "text": " SupplyETH, enter markets and borrow DAI initialized "
+};
+
+res = JSON.stringify(response);
+console.log(res)
+return res;
+
+};
 
 
 exports.startGanache = async function (req, res) {
@@ -228,6 +286,27 @@ exports.invalidRequest = function (req, res) {
   res.end('Invalid Request');
 };
 
+
+
+exports.checkSUMAccountsETH = async function (user, res) {
+  //const provider = new ethers.providers.Web3Provider(ganache.provider())
+  //web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
+  
+    var i;
+    var sumBalance = web3.utils.toBN(0)
+  for (i = 0; i < 10; i++) {
+    sumBalance = sumBalance.add(web3.utils.toBN((await web3.eth.getBalance(AccountList[i]))))
+  } 
+  // sumBalance = web3.utils.toBN(sumBalance)
+  var response = {
+    "text": "total balance in Ether in all wallets: " + web3.utils.fromWei(sumBalance, "kether")
+  };
+  res = web3.utils.fromWei(sumBalance, "kether");
+  console.log(JSON.stringify(response))
+  return res;
+};
+
+
 exports.startAndCheckEther = async function (user, res) {
   //const provider = new ethers.providers.Web3Provider(ganache.provider())
   //web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
@@ -239,6 +318,28 @@ exports.startAndCheckEther = async function (user, res) {
   console.log(JSON.stringify(response))
   return res;
 };
+
+
+
+exports.checkSUMDAIBalance = async function (user, res) {
+
+  var i;
+  var sumBalance = 0
+for (i = 0; i < 10; i++) {
+  sumBalance = sumBalance + Number(await cToken.methods.borrowBalanceCurrent(AccountList[i]).call());
+} 
+sumBalance = sumBalance / Math.pow(10, underlyingDecimals);
+  console.log(`Total (borrowed) balance is ${sumBalance} ${assetNameDAI}`);
+
+  var response = {
+    "text": " Total balance of DAI " + sumBalance
+  };
+
+  res = sumBalance
+  console.log(JSON.stringify(response))
+  return res;
+};
+
 
 exports.checkDAIBalance = async function (user, res) {
 
