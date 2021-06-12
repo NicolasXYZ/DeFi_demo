@@ -156,6 +156,17 @@ module.exports = function (app) {
         });
     });
 
+
+    app.route('/checkSUMAccounts/TotalLiquidity').get(async (req, res) => {
+        await service.checkSUMAccountsTotalLiquidity().then((result) => {
+                return res.send((result/ Math.pow(10, 3)).toString());
+            //return res.send((result).toString());
+
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
     /*
     
         app.route('/supplyRateDAI')

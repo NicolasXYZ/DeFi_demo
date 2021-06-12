@@ -357,6 +357,27 @@ exports.checkDAIBalance = async function (user, res) {
 };
 
 
+exports.checkSUMAccountsTotalLiquidity = async function (user, res) {
+
+  var i=0
+  //var liquidity = web3.utils.toBN(0)
+  var liquidity = 0
+  
+  for (i = 0; i < 10; i++) {
+    let { 1: liquiditytemp } = await comptroller.methods.getAccountLiquidity(AccountList[i]).call()
+    liquiditytemp = liquiditytemp / 1e18
+    liquidity  = liquidity + liquiditytemp
+  }
+  // liquidity = liquidity.div(1e18)
+  // liquidity = liquidity.toNumber()
+  var response = {
+    "text": ' Total Liquidity :' + liquidity 
+  };
+  console.log(response)
+  res = liquidity;
+  
+  return res;
+};
 
 exports.calculateLiquidity = async function (user, res) {
 
