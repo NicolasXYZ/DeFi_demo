@@ -171,6 +171,47 @@ exports.startGanache = async function (req, res) {
 };
 
 
+exports.supplyDAI = async function ( amountAndUser, user, res) {
+  amount = amountAndUser[0];
+  user = amountAndUser[1];
+  console.log('Supplying ' + amount + ' units of DAI to the Compound Protocol...', '\n');
+  underlyingAsCollateral = amount
+
+  const decimals = web3.utils.toBN(18);    
+  const tokenAmount = web3.utils.toBN(amount);
+  const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+  
+  await underlying.methods.approve(cTokenAddress, tokenAmountHex).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300)
+    //gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[approve] error:', error);
+  });
+
+    await cToken.methods.mint(tokenAmountHex).send({
+      from: AccountList[user],
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300)
+      //gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      console.log('done')
+    }).catch((error) => {
+      console.error('[supply] error:', error);
+    });
+    var response = {
+      "text": " Borrow balance of DAI borrowed "
+    };
+    
+    res = JSON.stringify(response);
+    console.log(res)
+    return res;
+};
 
 exports.SupplyETH = async function ( amountAndUser, user, res) {
   amount = amountAndUser[0];
@@ -263,6 +304,22 @@ const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals))
 };
 
 
+
+
+exports.checkcDAIBalance = async function (user, res) {
+
+
+  let cTokenBalance = await cToken.methods.balanceOf(AccountList[user]).call() / 1e8;
+
+  //const ethBalanceWei = await wallet.getBalance()
+  //const ethBalance = ethers.utils.formatEther(ethBalanceWei)
+
+  var response = {
+    "text": " balance in cDAI " + cTokenBalance
+  };
+  res = cTokenBalance
+  return res
+};
 
 exports.checkCTokenBalance = async function (user, res) {
 
@@ -414,6 +471,27 @@ exports.calculateLiquidity = async function (user, res) {
   return res;
 };
 
+
+
+exports.checkSUMAccountscETH = async function (user, res) {
+  //const provider = new ethers.providers.Web3Provider(ganache.provider())
+  //web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
+  
+    var i;
+    var sumBalance = 0
+  for (i = 0; i < 10; i++) {
+
+    let cTokenBalance = await cEth.methods.balanceOf(AccountList[i]).call() / 1e8;
+    sumBalance = sumBalance + cTokenBalance
+  } 
+  // sumBalance = web3.utils.toBN(sumBalance)
+  var response = {
+    "text": "total balance in cEther in all wallets: " + sumBalance
+  };
+  res = sumBalance;
+  console.log(JSON.stringify(response))
+  return res;
+};
 
 exports.checkAccountcETHBalance = async function (req, res) {
 

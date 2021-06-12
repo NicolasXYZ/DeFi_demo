@@ -56,6 +56,16 @@ module.exports = function (app) {
         });
     });
 
+
+    app.route('/checkSUMAccounts/cETHBalance').get(async (req, res) => {
+        await service.checkSUMAccountscETH().then((result) => {
+            return res.send((result / Math.pow(10, 3)).toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
     app.route('/exchangeRateETHUSD').get(async (req, res) => {
         await service.exchangeRateETHUSD().then((result) => {
             return res.send(result.toString());
@@ -67,6 +77,15 @@ module.exports = function (app) {
 
     app.route('/checkAccount/cETHBalance').get(async (req, res) => {
         await service.checkCTokenBalance(parseInt(app.locals.user)).then((result) => {
+            return res.send((result / Math.pow(10, 3)).toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
+    app.route('/checkAccount/cDAIBalance').get(async (req, res) => {
+        await service.checkcDAIBalance(parseInt(app.locals.user)).then((result) => {
             return res.send((result / Math.pow(10, 3)).toString());
         }).catch((error) => {
             console.log(error)
@@ -139,6 +158,19 @@ module.exports = function (app) {
         }
         let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
         await service.borrowDAI(newInput).then((result) => {
+            return res.sendStatus(200);
+        }).catch((error) => {
+            return res.sendStatus(400);
+        });
+    });
+
+
+    app.route('/supplyDAI/:amount').get(async (req, res) => {
+        if (isNaN(req.params.amount)) {
+            return res.sendStatus(400);
+        }
+        let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+        await service.supplyDAI(newInput).then((result) => {
             return res.sendStatus(200);
         }).catch((error) => {
             return res.sendStatus(400);
