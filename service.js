@@ -941,13 +941,13 @@ exports.exchangeRatecDAIETH = async function (user, res) {
   var i;
   var sumCTokenBalance = 0
   var sumTokenBalance = web3.utils.toBN(0)
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < 10; i++) {
     sumTokenBalance = sumTokenBalance.add(web3.utils.toBN((await web3.eth.getBalance(AccountList[i]))))
     let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
     sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
-  //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
-  let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 5) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 3)) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 4) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
   res = exchangeRate
   //console.log(response)
   return res
@@ -958,13 +958,13 @@ exports.exchangeRatecETHDAI = async function (user, res) {
   var i;
   var sumCTokenBalance = 0
   var sumTokenBalance = 0
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < 10; i++) {
     sumTokenBalance = sumTokenBalance + Number(await cToken.methods.borrowBalanceCurrent(AccountList[i]).call());
     let cTokenBalance = await cEth.methods.balanceOf(AccountList[i]).call() / 1e8;
       sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
   //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
-  let exchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
+  let exchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance * 10) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
   res = exchangeRate
   //console.log(response)
   return res
@@ -976,7 +976,7 @@ exports.exchangeRatecDAIDAI = async function (user, res) {
   var i;
   var sumCTokenBalance = 0
   var sumTokenBalance = 0
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < 10; i++) {
     sumTokenBalance = sumTokenBalance + Number(await cToken.methods.borrowBalanceCurrent(AccountList[i]).call());
     let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
     sumCTokenBalance = sumCTokenBalance + cTokenBalance
@@ -1005,7 +1005,7 @@ exports.exchangeRatecETHETH = async function (user, res) {
   var i;
   var sumCTokenBalance = 0
   var sumTokenBalance = web3.utils.toBN(0)
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < 10; i++) {
     sumTokenBalance = sumTokenBalance.add(web3.utils.toBN((await web3.eth.getBalance(AccountList[i]))))
       let cTokenBalance = await cEth.methods.balanceOf(AccountList[i]).call() / 1e8;
       sumCTokenBalance = sumCTokenBalance + cTokenBalance
