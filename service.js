@@ -322,27 +322,107 @@ exports.redeemDAI = async function (amountAndUser, user, res) {
   return res;
 };
 
-
-exports.borrowETH = async function (amountAndUser, user, res) {
+exports.repayborrowETH = async function (amountAndUser, user, res) {
   amount = amountAndUser[0];
   user = amountAndUser[1];
 
-  /*
-   const decimals = web3.utils.toBN(18);
-  const tokenAmount = web3.utils.toBN(amount);
-  const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
-
-  console.log('\Approving token transfer...');
-  await underlying.methods.approve(cTokenAddress, tokenAmountHex).send({
-  from: AccountList[user],
+  console.log('\nEntering market (via Comptroller contract) for ETH (as collateral)...');
+  let markets = [cTokenAddress]; // This is the cToken contract(s) for your collateral
+  await comptroller.methods.enterMarkets(markets).send({
+    from: AccountList[user],
     gasLimit: web3.utils.toHex(6721975),
     gasPrice: web3.utils.toHex(300000000)
   }).then((result) => {
     console.log('done')
   }).catch((error) => {
-    console.error('[approving ] error:', error);
+    console.error('[entering market] error:', error);
   });
-*/
+
+  console.log(`\nNow attempting to repay ${amount} ETH...`);
+  await cEth.methods.repayBorrow().send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300000000),
+    value: (web3.utils.toWei(amount.toString(), 'ether'))
+    //gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[repay borrow] error:', error);
+  });
+  var response = {
+    "text": " repay Borrowing of ETH done "
+  };
+
+  res = JSON.stringify(response);
+  console.log(res)
+  return res;
+};
+
+
+exports.repayborrowDAI = async function (amountAndUser, user, res) {
+  amount = amountAndUser[0];
+  user = amountAndUser[1];
+
+
+  const decimals = web3.utils.toBN(18);
+  const tokenAmount = web3.utils.toBN(amount);
+  const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+
+  console.log('\nEntering market (via Comptroller contract) for ETH (as collateral)...');
+  let markets = [cEthAddress]; // This is the cToken contract(s) for your collateral
+  await comptroller.methods.enterMarkets(markets).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(300000000)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[entering market] error:', error);
+  });
+
+
+  console.log(`Approving ${assetNameDAI} to be transferred from your wallet to the c${assetNameDAI} contract...`);
+  await underlying.methods.approve(cTokenAddress, tokenAmountHex).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300000000),
+   //value: (web3.utils.toWei(amount.toString(), 'ether'))
+    //gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[approve repay borrow] error:', error);
+  });
+
+  console.log(`\nNow attempting to repay ${amount} DAI...`);
+  await cToken.methods.repayBorrow(tokenAmountHex).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300000000),
+    //value: (web3.utils.toWei(amount.toString(), 'ether'))
+    //gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[repay borrow] error:', error);
+  });
+  var response = {
+    "text": " repay Borrowing of DAI done "
+  };
+
+  res = JSON.stringify(response);
+  console.log(res)
+  return res;
+};
+
+exports.borrowETH = async function (amountAndUser, user, res) {
+  amount = amountAndUser[0];
+  user = amountAndUser[1];
+
   console.log('\nEntering market (via Comptroller contract) for ETH (as collateral)...');
   let markets = [cTokenAddress]; // This is the cToken contract(s) for your collateral
   await comptroller.methods.enterMarkets(markets).send({
