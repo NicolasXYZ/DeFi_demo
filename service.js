@@ -322,6 +322,85 @@ exports.redeemDAI = async function (amountAndUser, user, res) {
   return res;
 };
 
+
+exports.borrowETH = async function (amountAndUser, user, res) {
+  amount = amountAndUser[0];
+  user = amountAndUser[1];
+
+  /*
+   const decimals = web3.utils.toBN(18);
+  const tokenAmount = web3.utils.toBN(amount);
+  const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+
+  console.log('\Approving token transfer...');
+  await underlying.methods.approve(cTokenAddress, tokenAmountHex).send({
+  from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(300000000)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[approving ] error:', error);
+  });
+*/
+  console.log('\nEntering market (via Comptroller contract) for ETH (as collateral)...');
+  let markets = [cTokenAddress]; // This is the cToken contract(s) for your collateral
+  await comptroller.methods.enterMarkets(markets).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    gasPrice: web3.utils.toHex(300000000)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[entering market] error:', error);
+  });
+
+  console.log('Calculating your liquid assets in the protocol...');
+  let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(AccountList[user]).call();
+  liquidity = liquidity / 1e18;
+
+  console.log(`Fetching ${assetNameETH} price from the price feed...`);
+  let underlyingPriceInUsd = await priceFeed.methods.price(assetNameETH).call();
+  underlyingPriceInUsd = underlyingPriceInUsd / 1e6; // Price feed provides price in USD with 6 decimal places
+
+  console.log(`Fetching borrow rate per block for ${assetNameETH} borrowing...`);
+  let borrowRate = await cEth.methods.borrowRatePerBlock().call();
+  console.log('done borrow rate')
+  borrowRate = borrowRate / Math.pow(10, underlyingDecimals);
+
+  console.log(`\nYou have ${liquidity} of LIQUID assets (worth of USD) pooled in the protocol.`);
+  console.log(`1 ${assetNameETH} == ${underlyingPriceInUsd.toFixed(6)} USD`);
+  console.log(`You can borrow up to ${liquidity / underlyingPriceInUsd} ${assetNameDAI} from the protocol.`);
+  console.log(`NEVER borrow near the maximum amount because your account will be instantly liquidated.`);
+  console.log(`\nYour borrowed amount INCREASES (${borrowRate} * borrowed amount) ${assetNameDAI} per block.\nThis is based on the current borrow rate.\n`);
+
+  console.log(`\nNow attempting to borrow ${amount} ETH...`);
+  await cEth.methods.borrow(web3.utils.toWei(amount.toString(), 'ether')).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300000000)
+    //gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[borrow] error:', error);
+  });
+  var response = {
+    "text": " Borrow of ETH done "
+  };
+
+
+  console.log('\nFetching your ETH borrow balance from cETH contract...');
+  let balance = await cEth.methods.borrowBalanceCurrent(AccountList[user]).call();
+  balance = balance / 1e18; // because DAI is a 1e18 scaled token.
+  console.log(`Borrow balance is ${balance} ETH`);
+
+  res = JSON.stringify(response);
+  console.log(res)
+  return res;
+};
+
 exports.borrowDAI = async function (amountAndUser, user, res) {
   amount = amountAndUser[0];
   user = amountAndUser[1];
@@ -567,6 +646,44 @@ exports.calculateLiquidity = async function (user, res) {
 };
 
 
+exports.checkSUMAccountscDAI = async function (user, res) {
+  //const provider = new ethers.providers.Web3Provider(ganache.provider())
+  //web3.eth.getBalance("0xa3957d49125150BF1155a57eaF259d1604069EE2", function (err, result) {
+
+  var i;
+  var sumBalance = 0
+  for (i = 0; i < 10; i++) {
+
+    let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
+    sumBalance = sumBalance + cTokenBalance
+  }
+  // sumBalance = web3.utils.toBN(sumBalance)
+  var response = {
+    "text": "total balance in cDAI in all wallets: " + sumBalance
+  };
+  res = sumBalance;
+  console.log(JSON.stringify(response))
+  return res;
+};
+
+exports.checkAccountcETHBalance = async function (req, res) {
+
+  const ethDecimals = 18; // Ethereum has 18 decimal places
+
+  console.log('Calculating your liquid assets in the protocol...');
+  let { 1: liquidity } = await comptroller.methods.getAccountLiquidity(AccountList[user]).call();
+  liquidity = liquidity / 1e18;
+
+
+  var response = {
+    "text": " total balance of cTokens not engaged in borrowing/lending: " + liquidity + " (worth in USD at the current exchange rates)"
+  };
+
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(response));
+  return res;
+};
 
 exports.checkSUMAccountscETH = async function (user, res) {
   //const provider = new ethers.providers.Web3Provider(ganache.provider())

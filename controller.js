@@ -66,6 +66,16 @@ module.exports = function (app) {
         });
     });
 
+
+    app.route('/checkSUMAccounts/cDAIBalance').get(async (req, res) => {
+        await service.checkSUMAccountscDAI().then((result) => {
+            return res.send((result / Math.pow(10, 3)).toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
     app.route('/exchangeRateETHUSD').get(async (req, res) => {
         await service.exchangeRateETHUSD().then((result) => {
             return res.send(result.toString());
@@ -225,7 +235,6 @@ module.exports = function (app) {
         });
     });
 
-
     app.route('/checkSUMAccounts/TotalLiquidity').get(async (req, res) => {
         await service.checkSUMAccountsTotalLiquidity().then((result) => {
                 return res.send((result/ Math.pow(10, 3)).toString());
@@ -236,44 +245,37 @@ module.exports = function (app) {
             return res.sendStatus(400);
         });
     });
+
+
+    app.route('/borrowETH/:amount').get(async (req, res) => {
+        if (isNaN(req.params.amount)) {
+            return res.sendStatus(400);
+        }
+        let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+        await service.borrowETH(newInput).then((result) => {
+            return res.sendStatus(200);
+        }).catch((error) => {
+            return res.sendStatus(400);
+        });
+    });
     /*
-    
-        app.route('/supplyRateDAI')
-            .get(service.supplyRateDAI)
-    
-    app.route('/globalAggregates/DAI')
-        .get(service.globalAggregatesDAI)
-    
+        repayBorrw x 2
+        in init add supplyDAI, borrowETH, and maybe the two repay Borrow ?
 
-    app.route('/globalAggregates/cETH')
-        .get(service.globalAggregatescETH)
-
-        app.route('/supplyRateETH')
-            .get(service.borrowRateETH)
-    
         app.route('/exchangeRatecDAIcETH')
             .get(service.exchangeRatecDAIcETH)
     
         app.route('/exchangeRateDAIcDAI')
             .get(service.exchangeRateDAIcDAI)
     
-        app.route('/redeemETH/:amount')
-            .get(service.redeemETH)
+
+    /////////////// NOT NEEDED FOR SIMPLER VERSION OF DEMO //////////////
+
+        app.route('/supplyRateDAI')
+            .get(service.supplyRateDAI)
     
-        app.route('/redeemDAI/:amount')
-            .get(service.redeemDAI)
-    
-        app.route('/borrowETH/:amount').get(async (req, res) => {
-            if (isNaN(req.params.amount)) {
-                return res.sendStatus(400);
-            }
-            await service.borrowETH(req.params.amount).then((result) => {
-                return res.sendStatus(200);
-            }).catch((error) => {
-                return res.sendStatus(400);
-            });
-        });
-    
+        app.route('/supplyRateETH')
+            .get(service.borrowRateETH)
     
         app.route('/repayETH/:amount').get(async (req, res) => {
             if (isNaN(req.params.amount)) {
@@ -286,7 +288,6 @@ module.exports = function (app) {
             });
         });
     
-    
         app.route('/repayDAI/:amount').get(async (req, res) => {
             if (isNaN(req.params.amount)) {
                 return res.sendStatus(400);
@@ -297,25 +298,13 @@ module.exports = function (app) {
                 return res.sendStatus(400);
             });
         });
-        app.route('/checkAccount/cDAIBalance')
-            .get(service.checkcDAIBalance)
     
-        app.route('/supplyDAI/:amount').get(async (req, res) => {
-            if (isNaN(req.params.amount)) {
-                return res.sendStatus(400);
-            }
-            await service.SupplyETH(req.params.amount).then((result) => {
-                return res.sendStatus(200);
-            }).catch((error) => {
-                return res.sendStatus(400);
-            });
-        });
     */
     ////////////////////////////////////////
 
 
 
-    // needed ????
+    // NOT NEEDED FOR SIMPLER VERSION OF DEMO
 
     app.route('/checkCTokenBalance')
         .get(service.checkAccountcETHBalance)
