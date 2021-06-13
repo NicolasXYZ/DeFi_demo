@@ -70,17 +70,17 @@ const fromMyWallet = {
 
 exports.initAllfunctions = async function (req, res) {
 
-  let markets = [cEthAddress];
+
   var i = 0
   amount = 1
   amountToString = amount.toString();
 
   const decimals = web3.utils.toBN(18);
-  const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 3));
+  const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 5));
   const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
 
   for (i = 0; i < 10; i++) {
-
+    let markets = [cEthAddress];
     await cEth.methods.mint().send({
       from: AccountList[i],
       gasLimit: web3.utils.toHex(6721975),
@@ -115,10 +115,62 @@ exports.initAllfunctions = async function (req, res) {
     }).catch((error) => {
       console.error('[borrow] error:', error);
     });
+
+
+
+    let markets2 = [cTokenAddress]; // This is the cToken contract(s) for your collateral
+    await comptroller.methods.enterMarkets(markets2).send({
+      from: AccountList[i],
+      gasLimit: web3.utils.toHex(6721975),
+      gasPrice: web3.utils.toHex(300000000)
+    }).then((result) => {
+      console.log('done')
+    }).catch((error) => {
+      console.error('[entering market] error:', error);
+    });
+  
+    await underlying.methods.approve(cTokenAddress, tokenAmountHex).send({
+      from: AccountList[i],
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300)
+      //gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      console.log('done')
+    }).catch((error) => {
+      console.error('[approve] error:', error);
+    });
+  
+    await cToken.methods.mint(tokenAmountHex).send({
+      from: AccountList[i],
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300)
+      //gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      console.log('done')
+    }).catch((error) => {
+      console.error('[supply] error:', error);
+    });
+
+    console.log(`\nNow attempting to borrow ${amount} ETH...`);
+    await cEth.methods.borrow(web3.utils.toWei(amount.toString(), 'ether')).send({
+      from: AccountList[i],
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300000000)
+      //gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      console.log('done')
+    }).catch((error) => {
+      console.error('[borrow] error:', error);
+    });
+
+
   }
 
   var response = {
-    "text": " SupplyETH, enter markets and borrow DAI initialized "
+    "text": " SupplyETH, SupplyDAI, enter markets and borrow DAI and ETH initialized "
   };
 
   res = JSON.stringify(response);

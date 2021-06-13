@@ -283,10 +283,11 @@ module.exports = function (app) {
         });
     });
     /*
-        repayBorrw x 2
-        in init add supplyDAI, borrowETH, and maybe the two repay Borrow ?
 
-        app.route('/exchangeRatecDAIcETH')
+        app.route('/exchangeRatecETHDAI')
+            .get(service.exchangeRatecDAIcETH)
+    
+        app.route('/exchangeRatecDAIETH')
             .get(service.exchangeRatecDAIcETH)
     
         app.route('/exchangeRateDAIcDAI')
@@ -301,27 +302,6 @@ module.exports = function (app) {
         app.route('/supplyRateETH')
             .get(service.borrowRateETH)
     
-        app.route('/repayETH/:amount').get(async (req, res) => {
-            if (isNaN(req.params.amount)) {
-                return res.sendStatus(400);
-            }
-            await service.repayETH(req.params.amount).then((result) => {
-                return res.sendStatus(200);
-            }).catch((error) => {
-                return res.sendStatus(400);
-            });
-        });
-    
-        app.route('/repayDAI/:amount').get(async (req, res) => {
-            if (isNaN(req.params.amount)) {
-                return res.sendStatus(400);
-            }
-            await service.repayDAI(req.params.amount).then((result) => {
-                return res.sendStatus(200);
-            }).catch((error) => {
-                return res.sendStatus(400);
-            });
-        });
     
     */
     ////////////////////////////////////////
