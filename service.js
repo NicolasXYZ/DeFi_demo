@@ -78,6 +78,8 @@ exports.initAllfunctions = async function (req, res) {
   const decimals = web3.utils.toBN(18);
   const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 5));
   const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+  //const tokenAmount2 = web3.utils.toBN(amount * Math.pow(10, 4));
+  //const tokenAmountHex2 = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
 
   for (i = 0; i < 10; i++) {
     let markets = [cEthAddress];
@@ -154,7 +156,7 @@ exports.initAllfunctions = async function (req, res) {
     });
 
     console.log(`\nNow attempting to borrow ${amount} ETH...`);
-    await cEth.methods.borrow(web3.utils.toWei(amount.toString(), 'ether')).send({
+    await cEth.methods.borrow(web3.utils.toWei((amount/2).toString(), 'ether')).send({
       from: AccountList[i],
       gasLimit: web3.utils.toHex(6721975),
       //mantissa: false,
@@ -166,6 +168,31 @@ exports.initAllfunctions = async function (req, res) {
       console.error('[borrow] error:', error);
     });
 
+    /*
+  await underlying.methods.approve(cTokenAddress, tokenAmountHex2).send({
+    from: AccountList[i],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300)
+    //gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[approve] error:', error);
+  });
+
+  await cToken.methods.mint(tokenAmountHex2).send({
+    from: AccountList[i],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300)
+    //gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    console.log('done')
+  }).catch((error) => {
+    console.error('[supply] error:', error);
+  });
+*/
 
   }
 
@@ -913,6 +940,20 @@ exports.exchangeRatecETHDAI = async function (user, res) {
 
 exports.exchangeRatecDAIDAI = async function (user, res) {
 
+  
+  var i;
+  var sumCTokenBalance = 0
+  var sumTokenBalance = 0
+  for (i = 0; i < 5; i++) {
+    sumTokenBalance = sumTokenBalance + Number(await cToken.methods.borrowBalanceCurrent(AccountList[i]).call());
+    let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
+    sumCTokenBalance = sumCTokenBalance + cTokenBalance
+  }
+  let exchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
+  res = exchangeRate
+  //console.log(response)
+  return res;
+  /*
   const underlyingDecimals = 18; // Ethereum has 18 decimal places
 
   let erCurrent = await cToken.methods.exchangeRateCurrent().call();
@@ -923,14 +964,24 @@ exports.exchangeRatecDAIDAI = async function (user, res) {
     "text": " exchange rate (from cDAI to DAI) of: " + exchangeRateCurrent
 
   };
-
-  res = exchangeRate
-  console.log(response)
-  return res;
+  */
 };
 
 exports.exchangeRatecETHETH = async function (user, res) {
 
+
+  var i;
+  var sumCTokenBalance = 0
+  var sumTokenBalance = web3.utils.toBN(0)
+  for (i = 0; i < 5; i++) {
+    sumTokenBalance = sumTokenBalance.add(web3.utils.toBN((await web3.eth.getBalance(AccountList[i]))))
+      let cTokenBalance = await cEth.methods.balanceOf(AccountList[i]).call() / 1e8;
+      sumCTokenBalance = sumCTokenBalance + cTokenBalance
+  }
+  let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / (sumCTokenBalance/ Math.pow(10, 3) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  res = exchangeRate
+  return res
+  /*
   const ethDecimals = 18; // Ethereum has 18 decimal places
 
   let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
@@ -944,6 +995,7 @@ exports.exchangeRatecETHETH = async function (user, res) {
   res = exchangeRateCurrent
   console.log(response)
   return res;
+  */
 };
 
 
