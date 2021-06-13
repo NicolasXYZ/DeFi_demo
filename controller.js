@@ -76,8 +76,31 @@ module.exports = function (app) {
         });
     });
 
+
+    /*
+    app.route('/exchangeRatecETHDAI').get(async (req, res) => {
+        await service.exchangeRatecETHDAI().then((result) => {
+            return res.send(result.toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+    // cETH/ETH * ETH/DAI (ETH/DAI = ETH/USD= 2554.23 / DAIUSD = underlyingprice
+    // IT'S A CST TIMES 1/ETHcETH SO NO NEED OF FUNCTION
+    */
+
     app.route('/exchangeRateETHUSD').get(async (req, res) => {
         await service.exchangeRateETHUSD().then((result) => {
+            return res.send(result.toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
+    app.route('/exchangeRatecDAIDAI').get(async (req, res) => {
+        await service.exchangeRatecDAIDAI().then((result) => {
             return res.send(result.toString());
         }).catch((error) => {
             console.log(error)
@@ -121,8 +144,19 @@ module.exports = function (app) {
         });
     });
 
-    app.route('/exchangeRateETHcETH').get(async (req, res) => {
-        await service.exchangeRateETHcETH().then((result) => {
+
+    /* IT'S A CST TIMES 1/DAIcDAI !!! it's cDAI/DAI * DAI/ETH
+    app.route('/exchangeRatecDAIETH').get(async (req, res) => {
+        await service.exchangeRatecDAIETH().then((result) => {
+            return res.send(result.toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+*/
+    app.route('/exchangeRatecETHETH').get(async (req, res) => {
+        await service.exchangeRatecETHETH().then((result) => {
             return res.send(result.toString());
         }).catch((error) => {
             console.log(error)
@@ -284,15 +318,6 @@ module.exports = function (app) {
     });
     /*
 
-        app.route('/exchangeRatecETHDAI')
-            .get(service.exchangeRatecDAIcETH)
-    
-        app.route('/exchangeRatecDAIETH')
-            .get(service.exchangeRatecDAIcETH)
-    
-        app.route('/exchangeRateDAIcDAI')
-            .get(service.exchangeRateDAIcDAI)
-    
 
     /////////////// NOT NEEDED FOR SIMPLER VERSION OF DEMO //////////////
 

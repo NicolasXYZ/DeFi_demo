@@ -882,7 +882,54 @@ exports.getCollateralFactor = async function (req, res) {
   return res;
 };
 
-exports.exchangeRateETHcETH = async function (user, res) {
+/*
+exports.exchangeRatecETHDAI = async function (user, res) {
+
+  const ethDecimals = 18; // Ethereum has 18 decimal places
+
+  let underlyingPriceInUsd = await priceFeed.methods.price(assetNameDAI).call();
+  underlyingPriceInUsd = underlyingPriceInUsd / 1e6; // Price feed provides price in USD with 6 decimal places
+
+
+  let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
+  exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
+
+  //ratecETHDAI =  (  ETHUSD= 2554.23 / DAIUSD = underlyingPriceInUsd) / ETHcETH
+
+  ratecETHDAI =  2554.23 / ( underlyingPriceInUsd * exchangeRateCurrent)
+
+  var response = {
+    "text": " exchange rate (from cETH to DAI) of: " + exchangeRateCurrent
+
+  };
+
+  res = exchangeRateCurrent
+  console.log(response)
+  return res;
+};
+*/
+
+
+
+exports.exchangeRatecDAIDAI = async function (user, res) {
+
+  const underlyingDecimals = 18; // Ethereum has 18 decimal places
+
+  let erCurrent = await cToken.methods.exchangeRateCurrent().call();
+  let exchangeRate = erCurrent / Math.pow(10, 18 + underlyingDecimals - 8);
+  console.log(`Current exchange rate from c${assetNameDAI} to ${assetName}:`, exchangeRate, '\n');
+
+  var response = {
+    "text": " exchange rate (from cDAI to DAI) of: " + exchangeRateCurrent
+
+  };
+
+  res = exchangeRate
+  console.log(response)
+  return res;
+};
+
+exports.exchangeRatecETHETH = async function (user, res) {
 
   const ethDecimals = 18; // Ethereum has 18 decimal places
 
@@ -890,7 +937,7 @@ exports.exchangeRateETHcETH = async function (user, res) {
   exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
 
   var response = {
-    "text": " exchange rate (from ETH to cETH) of: " + exchangeRateCurrent
+    "text": " exchange rate (from cETH to ETH) of: " + exchangeRateCurrent
 
   };
 
