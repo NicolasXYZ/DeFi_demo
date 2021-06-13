@@ -66,7 +66,6 @@ module.exports = function (app) {
         });
     });
 
-
     app.route('/checkSUMAccounts/cDAIBalance').get(async (req, res) => {
         await service.checkSUMAccountscDAI().then((result) => {
             return res.send((result / Math.pow(10, 3)).toString());
@@ -75,7 +74,6 @@ module.exports = function (app) {
             return res.sendStatus(400);
         });
     });
-
 
     /*
     app.route('/exchangeRatecETHDAI').get(async (req, res) => {
@@ -164,6 +162,23 @@ module.exports = function (app) {
         });
     });
 
+    app.route('/exchangeRatecETHDAI').get(async (req, res) => {
+        await service.exchangeRatecETHDAI().then((result) => {
+            return res.send(result.toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
+    app.route('/exchangeRatecDAIETH').get(async (req, res) => {
+        await service.exchangeRatecDAIETH().then((result) => {
+            return res.send(result.toString());
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
 
     app.route('/checkAccount/DAIBalance').get(async (req, res) => {
         await service.checknonborrowedDAIBalance(parseInt(app.locals.user)).then((result) => {
