@@ -80,9 +80,9 @@ exports.initAllfunctions = async function (req, res) {
   //const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 5));
   const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 3));
   const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
-  //const tokenAmount2 = web3.utils.toBN(amount * Math.pow(10, 4));
-  //const tokenAmountHex2 = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
-
+  const tokenAmount2 = web3.utils.toBN((amount/2) * Math.pow(10, 3));
+  const tokenAmountHex2 = '0x' + tokenAmount2.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+  
   for (i = 0; i < 5; i++) {
     
     await web3.eth.sendTransaction({
@@ -166,7 +166,7 @@ exports.initAllfunctions = async function (req, res) {
       console.error('[entering market] error:', error);
     });
   
-    await underlying.methods.approve(cTokenAddress, tokenAmountHex).send({
+    await underlying.methods.approve(cTokenAddress, tokenAmountHex2).send({
       from: AccountList[i],
       gasLimit: web3.utils.toHex(6721975),
       //mantissa: false,
@@ -178,7 +178,7 @@ exports.initAllfunctions = async function (req, res) {
       console.error('[approve] error:', error);
     });
   
-    await cToken.methods.mint(tokenAmountHex).send({
+    await cToken.methods.mint(tokenAmountHex2).send({
       from: AccountList[i],
       gasLimit: web3.utils.toHex(6721975),
       //mantissa: false,
@@ -191,7 +191,7 @@ exports.initAllfunctions = async function (req, res) {
     });
 
     console.log(`\nNow attempting to borrow ${amount} ETH...`);
-    await cEth.methods.borrow(web3.utils.toWei((amount/2).toString(), 'ether')).send({
+    await cEth.methods.borrow(web3.utils.toWei((amount/4).toString(), 'ether')).send({
       from: AccountList[i],
       gasLimit: web3.utils.toHex(6721975),
       //mantissa: false,
@@ -251,11 +251,13 @@ exports.initAllfunctions2 = async function (req, res) {
   amountTransferFirstoLastAccount = 900
   amount2ToString = amountTransferFirstoLastAccount.toString()
   const decimals = web3.utils.toBN(18)
-  const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 5));
+  //const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 5));
+  const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 3));
+  
   const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
-  //const tokenAmount2 = web3.utils.toBN(amount * Math.pow(10, 4));
-  //const tokenAmountHex2 = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
-
+  const tokenAmount2 = web3.utils.toBN((amount/2) * Math.pow(10, 3));
+  const tokenAmountHex2 = '0x' + tokenAmount2.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+  
   for (i = 0; i < 10; i++) {
     let markets = [cEthAddress];
     await cEth.methods.mint().send({
@@ -306,7 +308,7 @@ exports.initAllfunctions2 = async function (req, res) {
       console.error('[entering market] error:', error);
     });
   
-    await underlying.methods.approve(cTokenAddress, tokenAmountHex).send({
+    await underlying.methods.approve(cTokenAddress, tokenAmountHex2).send({
       from: AccountList[i],
       gasLimit: web3.utils.toHex(6721975),
       //mantissa: false,
@@ -318,7 +320,7 @@ exports.initAllfunctions2 = async function (req, res) {
       console.error('[approve] error:', error);
     });
   
-    await cToken.methods.mint(tokenAmountHex).send({
+    await cToken.methods.mint(tokenAmountHex2).send({
       from: AccountList[i],
       gasLimit: web3.utils.toHex(6721975),
       //mantissa: false,
@@ -331,7 +333,7 @@ exports.initAllfunctions2 = async function (req, res) {
     });
 
     console.log(`\nNow attempting to borrow ${amount} ETH...`);
-    await cEth.methods.borrow(web3.utils.toWei((amount/2).toString(), 'ether')).send({
+    await cEth.methods.borrow(web3.utils.toWei((amount/4).toString(), 'ether')).send({
       from: AccountList[i],
       gasLimit: web3.utils.toHex(6721975),
       //mantissa: false,
