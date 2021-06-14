@@ -609,25 +609,79 @@ exports.redeemETH = async function (amountAndUser, user, res) {
   const tokenAmount = web3.utils.toBN(amount);
   const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
 
+  var i;
+  var sumCTokenBalance = 0
+  var sumTokenBalance = web3.utils.toBN(0)
+  for (i = 0; i < 10; i++) {
+    sumTokenBalance = sumTokenBalance.add(web3.utils.toBN((await web3.eth.getBalance(AccountList[i]))))
+      let cTokenBalance = await cEth.methods.balanceOf(AccountList[i]).call() / 1e8;
+      sumCTokenBalance = sumCTokenBalance + cTokenBalance
+  }
+  let shownexchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / (sumCTokenBalance/ Math.pow(10, 3) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  console.log(shownexchangeRate)
+
+  let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
+  exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
+  
+
   await cEth.methods.redeem(tokenAmountHex).send({
     from: AccountList[user],
     gasLimit: web3.utils.toHex(6721975),
     gasPrice: web3.utils.toHex(300000), // use ethgasstation.info (mainnet only)
     //value: web3.utils.toHex(web3.utils.toWei(amountToString, 'ether'))
   }).then((result) => {
-    console.log('done')
+    console.log('compound rate conversion done')
   }).catch((error) => {
     console.error('[redeem] error:', error);
   });
-  let cTokenBalance = await cEth.methods.balanceOf(AccountList[user]).call() / 1e8;
-  let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
-  exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
-  var response = {
-    "text": " new balance of: " + cTokenBalance + "; balance that was exchange at the rate (from ETH to cETH) of: " + exchangeRateCurrent
-  };
+
+
+
+  // get shownFXrate
+if (amount*(exchangeRateCurrent) < amount*(shownexchangeRate)) {
+  console.log('case1')
+//in that case I received less ETH than shown FX says I should have
+let remainingAmount = amount*((shownexchangeRate)-(exchangeRateCurrent))
+  console.log('remaining: ' + remainingAmount)
+  remainingAmounttoString = remainingAmount.toString()
+ 
+    await web3.eth.sendTransaction({
+      from: AccountList[9-user],
+      to: AccountList[user],
+      value: web3.utils.toHex(web3.utils.toWei(remainingAmounttoString, 'ether')),
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      console.log('getting remaining done')
+    }).catch((error) => {
+      console.error('[got remaining ETH] error:', error);
+    });
+    
+} else {
+  console.log('case2')
+  let remainingAmount = amount*((exchangeRateCurrent) - (shownexchangeRate))
+
+  console.log(remainingAmount)
+
+  remainingAmounttoString = remainingAmount.toString()
+ 
+    
+    await web3.eth.sendTransaction({
+      from: AccountList[user],
+      to: AccountList[9-user],
+      value: web3.utils.toHex(web3.utils.toWei(remainingAmounttoString, 'ether')),
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      console.log('sent remaining done')
+    }).catch((error) => {
+      console.error('[send remaining] error:', error);
+    });
+}
   res = 'good'
   console.log(res)
-  console.log(response)
   return res;
 };
 
