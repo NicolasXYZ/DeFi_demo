@@ -434,12 +434,24 @@ exports.supplyDAI = async function (amountAndUser, user, res) {
   const tokenAmount = web3.utils.toBN(amount);
   const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
 
+  var i;
+  var sumCTokenBalance = 0
+  var sumTokenBalance = 0
+  for (i = 0; i < 10; i++) {
+    sumTokenBalance = sumTokenBalance + Number(await cToken.methods.borrowBalanceCurrent(AccountList[i]).call());
+    let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
+    sumCTokenBalance = sumCTokenBalance + cTokenBalance
+  }
+  let shownexchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals )) + 1) / ((sumCTokenBalance/ Math.pow(10, 2) ) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
+  
+  let erCurrent = await cToken.methods.exchangeRateCurrent().call();
+  let exchangeRateCurrent = erCurrent / Math.pow(10, 18 + underlyingDecimals - 8);
+console.log('exchangeRateCurrent: ' + exchangeRateCurrent)
+console.log('shownexchangeRate: ' + shownexchangeRate)
   await underlying.methods.approve(cTokenAddress, tokenAmountHex).send({
     from: AccountList[user],
     gasLimit: web3.utils.toHex(6721975),
-    //mantissa: false,
     gasPrice: web3.utils.toHex(300)
-    //gasPrice: web3.utils.toHex(300)
   }).then((result) => {
     console.log('done')
   }).catch((error) => {
@@ -449,9 +461,7 @@ exports.supplyDAI = async function (amountAndUser, user, res) {
   await cToken.methods.mint(tokenAmountHex).send({
     from: AccountList[user],
     gasLimit: web3.utils.toHex(6721975),
-    //mantissa: false,
     gasPrice: web3.utils.toHex(300)
-    //gasPrice: web3.utils.toHex(300)
   }).then((result) => {
     console.log('done')
   }).catch((error) => {
@@ -461,6 +471,52 @@ exports.supplyDAI = async function (amountAndUser, user, res) {
     "text": " Borrow balance of DAI borrowed "
   };
 
+
+if (amount*(1/exchangeRateCurrent) < amount*(1/shownexchangeRate)) {
+  console.log('case1')
+//in that case I received TOO FEW cDAI than shown FX says I should have
+let remainingAmount = amount*((1/shownexchangeRate)-(1/exchangeRateCurrent))
+  
+const decimals = web3.utils.toBN(8)
+const tokenAmount = web3.utils.toBN(Math.round(remainingAmount));
+console.log('bignum converted')
+const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+   await cToken.methods.transfer( AccountList[user] , tokenAmountHex).send({
+    from: AccountList[9-user],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    //console.log(Math.round(remainingAmount))
+    console.log(result)
+    console.log('sent remaining to balance account done')
+  }).catch((error) => {
+    console.error('[send remaining] error:', error);
+  });
+} else {
+  console.log('case2')
+  let remainingAmount = amount*((1/exchangeRateCurrent) - (1/shownexchangeRate))
+
+  console.log(remainingAmount)
+const decimals = web3.utils.toBN(8)
+  //const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 5));
+  const tokenAmount = web3.utils.toBN(Math.round(remainingAmount));
+  console.log('bignum converted')
+  const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+     await cToken.methods.transfer( AccountList[9-user] , tokenAmountHex).send({
+      from: AccountList[user],
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      //console.log(Math.round(remainingAmount))
+      console.log(result)
+      console.log('sent remaining to balance account done')
+    }).catch((error) => {
+      console.error('[send remaining] error:', error);
+    });
+   
+}
   res = JSON.stringify(response);
   console.log(res)
   return res;
