@@ -72,12 +72,13 @@ exports.initAllfunctions = async function (req, res) {
 
 
   var i = 0
-  amount = 1
+  amount = 100
   amountToString = amount.toString()
   amountTransferFirstoLastAccount = 900
   amount2ToString = amountTransferFirstoLastAccount.toString()
   const decimals = web3.utils.toBN(18)
-  const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 5));
+  //const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 5));
+  const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 3));
   const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
   //const tokenAmount2 = web3.utils.toBN(amount * Math.pow(10, 4));
   //const tokenAmountHex2 = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
@@ -472,6 +473,20 @@ exports.SupplyETH = async function (amountAndUser, user, res) {
   const ethDecimals = 18; // Ethereum has 18 decimal places
   amountToString = amount.toString();
 
+  var i;
+  var sumCTokenBalance = 0
+  var sumTokenBalance = web3.utils.toBN(0)
+  for (i = 0; i < 10; i++) {
+    sumTokenBalance = sumTokenBalance.add(web3.utils.toBN((await web3.eth.getBalance(AccountList[i]))))
+      let cTokenBalance = await cEth.methods.balanceOf(AccountList[i]).call() / 1e8;
+      sumCTokenBalance = sumCTokenBalance + cTokenBalance
+  }
+  let shownexchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / (sumCTokenBalance/ Math.pow(10, 3) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  console.log(shownexchangeRate)
+
+  let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
+  exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
+  
   await cEth.methods.mint().send({
     from: AccountList[user],
     gasLimit: web3.utils.toHex(6721975),
@@ -482,9 +497,98 @@ exports.SupplyETH = async function (amountAndUser, user, res) {
   }).catch((error) => {
     console.error('[supply] error:', error);
   });
+  
+
+  // get shownFXrate
+if (amount*(1/exchangeRateCurrent) < amount*(1/shownexchangeRate)) {
+  console.log('case1')
+//in that case I received less cETH than shown FX says I should have
+let remainingAmount = amount*((1/shownexchangeRate)-(1/exchangeRateCurrent))
+  
+const decimals = web3.utils.toBN(8)
+const tokenAmount = web3.utils.toBN(Math.round(remainingAmount));
+console.log('bignum converted')
+const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+   await cEth.methods.transfer( AccountList[user] , tokenAmountHex).send({
+    from: AccountList[9-user],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    //console.log(Math.round(remainingAmount))
+    console.log(result)
+    console.log('sent remaining to balance account done')
+  }).catch((error) => {
+    console.error('[send remaining] error:', error);
+  });
+} else {
+  console.log('case2')
+  let remainingAmount = amount*((1/exchangeRateCurrent) - (1/shownexchangeRate))
+
+  console.log(remainingAmount)
+/*
+  await cEth.methods.approve(cEthAddress, Math.round(remainingAmount)).send({
+    from: AccountList[user],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300)
+    //gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    console.log('approval given')
+  }).catch((error) => {
+    console.error('[approve] error:', error);
+  });
+*/
+const decimals = web3.utils.toBN(8)
+  //const tokenAmount = web3.utils.toBN(amount * Math.pow(10, 5));
+  const tokenAmount = web3.utils.toBN(Math.round(remainingAmount));
+  console.log('bignum converted')
+  const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+     await cEth.methods.transfer( AccountList[9-user] , tokenAmountHex).send({
+      from: AccountList[user],
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      //console.log(Math.round(remainingAmount))
+      console.log(result)
+      console.log('sent remaining to balance account done')
+    }).catch((error) => {
+      console.error('[send remaining] error:', error);
+    });
+   
+
+    /*
+  await web3.eth.sendTransaction({
+    from: AccountList[9-user],
+    to:
+    value: web3.utils.toHex(web3.utils.toWei(remainingAmountString, 'kether')),
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    console.log('sent remaining to balance account done')
+  }).catch((error) => {
+    console.error('[send remaining] error:', error);
+  });
+} else {
+  remainingAmount = amount*((1/exchangeRateCurrent) - (1/shownexchangeRate))
+  remainingAmountString = remainingAmount.toString()
+    await web3.eth.sendTransaction({
+      from: AccountList[9-user],
+      to: AccountList[user],
+      value: web3.utils.toHex(web3.utils.toWei(remainingAmountString, 'kether')),
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      console.log('got remaining to balance account done')
+    }).catch((error) => {
+      console.error('[get remaining] error:', error);
+    });
+*/
+}
   let cTokenBalance = await cEth.methods.balanceOf(AccountList[user]).call() / 1e8;
-  let exchangeRateCurrent = await cEth.methods.exchangeRateCurrent().call();
-  exchangeRateCurrent = exchangeRateCurrent / Math.pow(10, 18 + ethDecimals - 8);
   var error = {
     "text": " balance in cETH " + cTokenBalance + "; balance that was exchange at the rate (from cETH to ETH) of: " + exchangeRateCurrent
   };
@@ -1120,7 +1224,7 @@ exports.exchangeRatecDAIETH = async function (user, res) {
     sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
   //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 3)) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
-  let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 3) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 5) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
   res = exchangeRate
   //console.log(response)
   return res
@@ -1183,7 +1287,7 @@ exports.exchangeRatecETHETH = async function (user, res) {
       let cTokenBalance = await cEth.methods.balanceOf(AccountList[i]).call() / 1e8;
       sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
-  let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / (sumCTokenBalance/ Math.pow(10, 1) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / (sumCTokenBalance/ Math.pow(10, 3) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
   res = exchangeRate
   return res
   /*
