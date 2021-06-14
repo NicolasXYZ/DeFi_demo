@@ -18,6 +18,16 @@ module.exports = function (app) {
         });
     });
 
+
+    app.route('/initAllAccounts2').get(async (req, res) => {
+        await service.initAllfunctions2().then((result) => {
+            return res.send(result);
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+    });
+
     app.route('/startGanache').get(async (req, res) => {
         await service.startGanache().then((result) => {
             return res.send(result);
