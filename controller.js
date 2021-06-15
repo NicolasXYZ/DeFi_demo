@@ -7,7 +7,75 @@ const { wrap } = require('@awaitjs/express');
 
 module.exports = function (app) {
 
-    
+    var service = require('./service.js');
+
+    app.route('/dashboard/:trader_id').get(async (req, res) => {
+        if (isNaN(req.params.trader_id) || (req.params.trader_id < 1) || (req.params.trader_id > 5)) {
+            return res.sendStatus(400);
+        }
+
+        app.locals.user = req.params.trader_id - 1
+        //console.dir((app.locals.user));
+        try {
+        var o={}
+        var key = 'eth'
+        o[key]=[]
+        let myWalletethamount = await service.startAndCheckEther(parseInt(app.locals.user))
+        let globalethamount = await service.checkSUMAccountsETH()
+        let ethrate = await service.borrowRateETH()
+
+        var eth_field = {
+            label: 'ETH',
+            gAmount: globalethamount,
+            wAmount: myWalletethamount,
+            rate: ethrate
+        }
+        o[key].push(eth_field)
+
+        var key2 = 'ceth'
+        o[key2] = []
+        let myWalletcethamount = await service.checkCTokenBalance(parseInt(app.locals.user))
+        let globalcethamount = await service.checkSUMAccountscETH()
+        var ceth_field = {
+            label: 'cETH',
+            gAmount: globalcethamount,
+            wAmount: myWalletcethamount
+        }
+        o[key2].push(ceth_field)
+
+        var key3 = 'dai'
+        o[key3] = []
+        let myWalletdaiamount = await service.checkCTokenBalance(parseInt(app.locals.user))
+        let globaldaiamount = await service.checkSUMDAIBalance()
+        let dairate = await service.borrowRateDAI()
+
+        var dai_field = {
+            label: 'DAI',
+            gAmount: globaldaiamount,
+            wAmount: myWalletdaiamount,
+            rate: dairate
+        }
+        o[key3].push(dai_field)
+
+        var key4 = 'cdai'
+        o[key4] = []
+        let myWalletcdaiamount = await service.checkcDAIBalance(parseInt(app.locals.user))
+        let globalcdaiamount = await service.checkSUMAccountscDAI()
+        var cdai_field = {
+            label: 'cDAI',
+            gAmount: globalcdaiamount,
+            wAmount: myWalletcdaiamount
+        }
+        o[key4].push(cdai_field)
+
+        return res.json(o);
+    }
+    catch (e) {
+        return res.sendStatus(400);
+    }
+    });
+
+
 
     app.route('/initAllAccounts').get(async (req, res) => {
         await service.initAllfunctions().then((result) => {
@@ -46,7 +114,6 @@ module.exports = function (app) {
         return res.sendStatus(200);
     });
 
-    var service = require('./service.js');
 
     app.route('/checkAccount/ETHBalance').get(async (req, res) => {
         await service.startAndCheckEther(parseInt(app.locals.user)).then((result) => {
