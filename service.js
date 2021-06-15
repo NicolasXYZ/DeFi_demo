@@ -893,6 +893,56 @@ exports.repayborrowETH = async function (amountAndUser, user, res) {
   }).catch((error) => {
     console.error('[repay borrow] error:', error);
   });
+
+
+  var i;
+  var sumCTokenBalance = 0
+  var sumTokenBalance = web3.utils.toBN(0)
+  for (i = 0; i < 10; i++) {
+    sumTokenBalance = sumTokenBalance.add(web3.utils.toBN((await web3.eth.getBalance(AccountList[i]))))
+    let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
+    sumCTokenBalance = sumCTokenBalance + cTokenBalance
+  }
+  //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 3)) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  let shownexchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 5) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  console.log(shownexchangeRate)
+
+
+  var i;
+  var sumCTokenBalance = 0
+  var sumTokenBalance = 0
+  for (i = 0; i < 10; i++) {
+    sumTokenBalance = sumTokenBalance + Number(await cToken.methods.borrowBalanceCurrent(AccountList[i]).call());
+    let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
+    sumCTokenBalance = sumCTokenBalance + cTokenBalance
+  }
+  let exchangeRateCurrent = (((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance/ Math.pow(10, 3) ) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals))))
+  console.log(exchangeRateCurrent)
+
+
+
+  // get shownFXrate
+
+  //in that case I received less cETH than shown FX says I should have
+  let remainingAmount = amount*((shownexchangeRate))
+    
+  const decimals = web3.utils.toBN(8)
+  const tokenAmount = web3.utils.toBN(Math.round(remainingAmount));
+  console.log('bignum converted')
+  const tokenAmountHex = '0x' + tokenAmount.mul(web3.utils.toBN(10).pow(decimals)).toString('hex');
+     await cToken.methods.transfer( AccountList[user] , tokenAmountHex).send({
+      from: AccountList[9-user],
+      gasLimit: web3.utils.toHex(6721975),
+      //mantissa: false,
+      gasPrice: web3.utils.toHex(300)
+    }).then((result) => {
+      //console.log(Math.round(remainingAmount))
+      console.log(result)
+      console.log('sent remaining to balance account done')
+    }).catch((error) => {
+      console.error('[send remaining] error:', error);
+    });
+
   var response = {
     "text": " repay Borrowing of ETH done "
   };
@@ -957,6 +1007,58 @@ exports.repayborrowDAI = async function (amountAndUser, user, res) {
     "text": " repay Borrowing of DAI done "
   };
 
+  var i;
+  var sumCTokenBalance = 0
+  var sumTokenBalance = 0
+  for (i = 0; i < 10; i++) {
+    sumTokenBalance = sumTokenBalance + Number(await cToken.methods.borrowBalanceCurrent(AccountList[i]).call());
+    let cTokenBalance = await cEth.methods.balanceOf(AccountList[i]).call() / 1e8;
+      sumCTokenBalance = sumCTokenBalance + cTokenBalance
+  }
+  //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  let shownexchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
+ console.log(shownexchangeRate)
+
+  var i;
+  var sumCTokenBalance = 0
+  var sumTokenBalance = web3.utils.toBN(0)
+  for (i = 0; i < 10; i++) {
+    sumTokenBalance = sumTokenBalance.add(web3.utils.toBN((await web3.eth.getBalance(AccountList[i]))))
+      let cTokenBalance = await cEth.methods.balanceOf(AccountList[i]).call() / 1e8;
+      sumCTokenBalance = sumCTokenBalance + cTokenBalance
+  }
+  let cETHETHFXrate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / (sumCTokenBalance/ Math.pow(10, 3) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  console.log(cETHETHFXrate)
+   
+  let underlyingPriceInUsd = await priceFeed.methods.price(assetNameDAI).call();
+  underlyingPriceInUsd = underlyingPriceInUsd / 1e5;
+  let  exchangeRateCurrent = (cETHETHFXrate*2554.23 ) / underlyingPriceInUsd 
+  console.log(exchangeRateCurrent)
+
+  // get shownFXrate
+//in that case I received TOO FEW cDAI than shown FX says I should have
+let remainingAmount = amount*(1/(shownexchangeRate))
+  console.log(remainingAmount)
+
+
+
+
+const decimals2 = web3.utils.toBN(8)
+const tokenAmount2 = web3.utils.toBN(Math.round(remainingAmount));
+console.log('bignum converted')
+const tokenAmountHex2 = '0x' + tokenAmount2.mul(web3.utils.toBN(10).pow(decimals2)).toString('hex');
+   await cEth.methods.transfer( AccountList[user] , tokenAmountHex2).send({
+    from: AccountList[9-user],
+    gasLimit: web3.utils.toHex(6721975),
+    //mantissa: false,
+    gasPrice: web3.utils.toHex(300)
+  }).then((result) => {
+    //console.log(Math.round(remainingAmount))
+    console.log(result)
+    console.log('sent remaining to balance account done')
+  }).catch((error) => {
+    console.error('[send remaining] error:', error);
+  });
   res = JSON.stringify(response);
   console.log(res)
   return res;
@@ -1045,7 +1147,7 @@ exports.borrowETH = async function (amountAndUser, user, res) {
 
 
 
-  if (amount*(1/exchangeRateCurrent) < amount*(1/shownexchangeRate)) {
+  if (amount*(exchangeRateCurrent) < amount*(1/shownexchangeRate)) {
     console.log('case1')
   //in that case I paid too few cETH compared to what  I should have
   let remainingAmount = amount*((1/shownexchangeRate))//-(1/ex - I just paid too few cETH) changeRateCurrent))
@@ -1071,7 +1173,7 @@ exports.borrowETH = async function (amountAndUser, user, res) {
     });
   } else {
     console.log('case2')
-    let remainingAmount = amount*((1/exchangeRateCurrent))// - (1/shownexchangeRate))
+    let remainingAmount = amount*((exchangeRateCurrent))// - (1/shownexchangeRate))
   
   
     console.log(remainingAmount)
@@ -1175,7 +1277,7 @@ exports.borrowDAI = async function (amountAndUser, user, res) {
   });
 
 
-  if (amount*(1/exchangeRateCurrent) < amount*(1/shownexchangeRate)) {
+  if (amount*(exchangeRateCurrent) < amount*(1/shownexchangeRate)) {
     console.log('case1')
   //in that case I paid too few cETH compared to what  I should have
   let remainingAmount = amount*((1/shownexchangeRate))//-(1/ex - I just paid too few cETH) changeRateCurrent))
@@ -1201,7 +1303,7 @@ exports.borrowDAI = async function (amountAndUser, user, res) {
     });
   } else {
     console.log('case2')
-    let remainingAmount = amount*((1/exchangeRateCurrent))// - (1/shownexchangeRate))
+    let remainingAmount = amount*((exchangeRateCurrent))// - (1/shownexchangeRate))
   
   
     console.log(remainingAmount)
