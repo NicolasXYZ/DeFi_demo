@@ -916,7 +916,7 @@ exports.repayborrowETH = async function (amountAndUser, user, res) {
     let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
     sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
-  let exchangeRateCurrent = (((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance/ Math.pow(10, 3) ) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals))))
+  let exchangeRateCurrent = (((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance/ Math.pow(10, 2) ) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals))))
   console.log(exchangeRateCurrent)
 
 
@@ -1016,7 +1016,7 @@ exports.repayborrowDAI = async function (amountAndUser, user, res) {
       sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
   //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
-  let shownexchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
+  let shownexchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance)/10 + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
  console.log(shownexchangeRate)
 
   var i;
@@ -1090,7 +1090,7 @@ exports.borrowETH = async function (amountAndUser, user, res) {
     let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
     sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
-  let exchangeRateCurrent = (((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance/ Math.pow(10, 3) ) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals))))
+  let exchangeRateCurrent = (((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance/ Math.pow(10, 2) ) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals))))
   console.log(exchangeRateCurrent)
   console.log('\nEntering market (via Comptroller contract) for ETH (as collateral)...');
   let markets = [cTokenAddress]; // This is the cToken contract(s) for your collateral
@@ -1214,7 +1214,7 @@ exports.borrowDAI = async function (amountAndUser, user, res) {
       sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
   //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
-  let shownexchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
+  let shownexchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance)/10 + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
  console.log(shownexchangeRate)
 
   var i;
@@ -1680,7 +1680,7 @@ exports.exchangeRatecETHDAI = async function (user, res) {
       sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
   //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
-  let exchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
+  let exchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance)/10 + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
   res = exchangeRate
   //console.log(response)
   return res
@@ -1697,7 +1697,7 @@ exports.exchangeRatecDAIDAI = async function (user, res) {
     let cTokenBalance = await cToken.methods.balanceOf(AccountList[i]).call() / 1e8;
     sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
-  let exchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance/ Math.pow(10, 3) ) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
+  let exchangeRate = ((sumTokenBalance/ Math.pow(10, underlyingDecimals)) + 1) / ((sumCTokenBalance/ Math.pow(10, 2) ) + 1 + (sumTokenBalance/ Math.pow(10, underlyingDecimals)))
   res = exchangeRate
   //console.log(response)
   return res;
