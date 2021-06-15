@@ -904,7 +904,7 @@ exports.repayborrowETH = async function (amountAndUser, user, res) {
     sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
   //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 3)) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
-  let shownexchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 5) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  let shownexchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 4) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
   console.log(shownexchangeRate)
 
 
@@ -1078,7 +1078,7 @@ exports.borrowETH = async function (amountAndUser, user, res) {
     sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
   //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 3)) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
-  let shownexchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 5) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  let shownexchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 4) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
   console.log(shownexchangeRate)
 
 
@@ -1663,7 +1663,7 @@ exports.exchangeRatecDAIETH = async function (user, res) {
     sumCTokenBalance = sumCTokenBalance + cTokenBalance
   }
   //let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 3)) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
-  let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 5) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
+  let exchangeRate = (Number(web3.utils.fromWei(sumTokenBalance, "kether")) + 1) / ((sumCTokenBalance/ Math.pow(10, 4) ) + 1 + Number(web3.utils.fromWei(sumTokenBalance, "kether")))
   res = exchangeRate
   //console.log(response)
   return res
