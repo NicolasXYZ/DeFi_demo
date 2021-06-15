@@ -35,7 +35,9 @@ module.exports = function (app) {
         var key2 = 'ceth'
         o[key2] = []
         let myWalletcethamount = await service.checkCTokenBalance(parseInt(app.locals.user))
+        myWalletcethamount = myWalletcethamount/ Math.pow(10, 3)
         let globalcethamount = await service.checkSUMAccountscETH()
+        globalcethamount = globalcethamount/ Math.pow(10, 3)
         var ceth_field = {
             label: 'cETH',
             gAmount: globalcethamount,
@@ -45,8 +47,10 @@ module.exports = function (app) {
 
         var key3 = 'dai'
         o[key3] = []
-        let myWalletdaiamount = await service.checkCTokenBalance(parseInt(app.locals.user))
+        let myWalletdaiamount = await service.checknonborrowedDAIBalance(parseInt(app.locals.user))
+        myWalletdaiamount = myWalletdaiamount/ Math.pow(10, 3)
         let globaldaiamount = await service.checkSUMDAIBalance()
+        globaldaiamount = globaldaiamount / Math.pow(10,3)
         let dairate = await service.borrowRateDAI()
 
         var dai_field = {
@@ -60,8 +64,10 @@ module.exports = function (app) {
         var key4 = 'cdai'
         o[key4] = []
         let myWalletcdaiamount = await service.checkcDAIBalance(parseInt(app.locals.user))
+        myWalletcdaiamount = myWalletcdaiamount / Math.pow(10,3)
         let globalcdaiamount = await service.checkSUMAccountscDAI()
-        var cdai_field = {
+        globalcdaiamount = globalcdaiamount / Math.pow(10,3)
+        var cdai_field = { 
             label: 'cDAI',
             gAmount: globalcdaiamount,
             wAmount: myWalletcdaiamount
@@ -76,6 +82,51 @@ module.exports = function (app) {
     });
 
 
+    app.route('/exchange').get(async (req, res) => {
+
+        //console.dir((app.locals.user));
+        try {
+        var o={}
+        var key = 'rates'
+        o[key]=[]
+        let cethethrate = await service.exchangeRatecETHETH()
+        var cetheth_field = {
+            from: 'ceth',
+            to: 'eth',
+            rate: cethethrate
+        }
+        o[key].push(cetheth_field)
+
+        let cethdairate = await service.exchangeRatecETHDAI()
+        var cethdai_field = {
+            from: 'ceth',
+            to: 'dai',
+            rate: cethdairate
+        }
+        o[key].push(cethdai_field)
+
+        let cdaidairate = await service.exchangeRatecDAIDAI()
+        var cdaidai_field = {
+            from: 'cdai',
+            to: 'dai',
+            rate: cdaidairate
+        }
+        o[key].push(cdaidai_field)
+
+        let cdaiethrate = await service.exchangeRatecDAIETH()
+        var cdaieth_field = {
+            from: 'cdai',
+            to: 'eth',
+            rate: cdaiethrate
+        }
+        o[key].push(cdaieth_field)
+
+        return res.json(o);
+    }
+    catch (e) {
+        return res.sendStatus(400);
+    }
+    });
 
     app.route('/initAllAccounts').get(async (req, res) => {
         await service.initAllfunctions().then((result) => {
