@@ -69,7 +69,13 @@ const fromMyWallet = {
 
 
 exports.initAllfunctions = async function (req, res) {
+  await sleep(3000)
 
+  function sleep(ms) {
+      return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+      });
+    }   
 
   var i = 0
   amount = 100
@@ -405,7 +411,7 @@ exports.startGanache = async function (req, res) {
   });
   */
   child = exec('sh ./run_ganache2.sh',
-    function (error, stdout, stderr) {
+     async function (error, stdout, stderr) {
       console.log('stdout: ' + stdout);
       console.log('stderr: ' + stderr);
       if (error !== null) {

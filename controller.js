@@ -9,7 +9,7 @@ module.exports = function (app) {
 
     var service = require('./service.js');
 
-    app.route('/dashboard/:trader_id').get(async (req, res) => {
+    app.route('/defidemo/dashboard/:trader_id').get(async (req, res) => {
         if (isNaN(req.params.trader_id) || (req.params.trader_id < 1) || (req.params.trader_id > 5)) {
             return res.sendStatus(400);
         }
@@ -17,118 +17,244 @@ module.exports = function (app) {
         app.locals.user = req.params.trader_id - 1
         //console.dir((app.locals.user));
         try {
-        var o={}
-        var key = 'eth'
-        o[key]=[]
-        let myWalletethamount = await service.startAndCheckEther(parseInt(app.locals.user))
-        let globalethamount = await service.checkSUMAccountsETH()
-        let ethrate = await service.borrowRateETH()
+            var o = {}
+            var key = 'eth'
+            o[key] = []
+            let myWalletethamount = await service.startAndCheckEther(parseInt(app.locals.user))
+            let globalethamount = await service.checkSUMAccountsETH()
+            let ethrate = await service.borrowRateETH()
 
-        var eth_field = {
-            label: 'ETH',
-            gAmount: globalethamount,
-            wAmount: myWalletethamount,
-            rate: ethrate
+            var eth_field = {
+                label: 'ETH',
+                gAmount: globalethamount,
+                wAmount: myWalletethamount,
+                rate: ethrate
+            }
+            o[key].push(eth_field)
+
+            var key2 = 'ceth'
+            o[key2] = []
+            let myWalletcethamount = await service.checkCTokenBalance(parseInt(app.locals.user))
+            myWalletcethamount = myWalletcethamount / Math.pow(10, 3)
+            let globalcethamount = await service.checkSUMAccountscETH()
+            globalcethamount = globalcethamount / Math.pow(10, 3)
+            var ceth_field = {
+                label: 'cETH',
+                gAmount: globalcethamount,
+                wAmount: myWalletcethamount
+            }
+            o[key2].push(ceth_field)
+
+            var key3 = 'dai'
+            o[key3] = []
+            let myWalletdaiamount = await service.checknonborrowedDAIBalance(parseInt(app.locals.user))
+            myWalletdaiamount = myWalletdaiamount / Math.pow(10, 3)
+            let globaldaiamount = await service.checkSUMDAIBalance()
+            globaldaiamount = globaldaiamount / Math.pow(10, 3)
+            let dairate = await service.borrowRateDAI()
+
+            var dai_field = {
+                label: 'DAI',
+                gAmount: globaldaiamount,
+                wAmount: myWalletdaiamount,
+                rate: dairate
+            }
+            o[key3].push(dai_field)
+
+            var key4 = 'cdai'
+            o[key4] = []
+            let myWalletcdaiamount = await service.checkcDAIBalance(parseInt(app.locals.user))
+            myWalletcdaiamount = myWalletcdaiamount / Math.pow(10, 3)
+            let globalcdaiamount = await service.checkSUMAccountscDAI()
+            globalcdaiamount = globalcdaiamount / Math.pow(10, 3)
+            var cdai_field = {
+                label: 'cDAI',
+                gAmount: globalcdaiamount,
+                wAmount: myWalletcdaiamount
+            }
+            o[key4].push(cdai_field)
+
+            return res.json(o);
         }
-        o[key].push(eth_field)
-
-        var key2 = 'ceth'
-        o[key2] = []
-        let myWalletcethamount = await service.checkCTokenBalance(parseInt(app.locals.user))
-        myWalletcethamount = myWalletcethamount/ Math.pow(10, 3)
-        let globalcethamount = await service.checkSUMAccountscETH()
-        globalcethamount = globalcethamount/ Math.pow(10, 3)
-        var ceth_field = {
-            label: 'cETH',
-            gAmount: globalcethamount,
-            wAmount: myWalletcethamount
+        catch (e) {
+            return res.sendStatus(400);
         }
-        o[key2].push(ceth_field)
-
-        var key3 = 'dai'
-        o[key3] = []
-        let myWalletdaiamount = await service.checknonborrowedDAIBalance(parseInt(app.locals.user))
-        myWalletdaiamount = myWalletdaiamount/ Math.pow(10, 3)
-        let globaldaiamount = await service.checkSUMDAIBalance()
-        globaldaiamount = globaldaiamount / Math.pow(10,3)
-        let dairate = await service.borrowRateDAI()
-
-        var dai_field = {
-            label: 'DAI',
-            gAmount: globaldaiamount,
-            wAmount: myWalletdaiamount,
-            rate: dairate
-        }
-        o[key3].push(dai_field)
-
-        var key4 = 'cdai'
-        o[key4] = []
-        let myWalletcdaiamount = await service.checkcDAIBalance(parseInt(app.locals.user))
-        myWalletcdaiamount = myWalletcdaiamount / Math.pow(10,3)
-        let globalcdaiamount = await service.checkSUMAccountscDAI()
-        globalcdaiamount = globalcdaiamount / Math.pow(10,3)
-        var cdai_field = { 
-            label: 'cDAI',
-            gAmount: globalcdaiamount,
-            wAmount: myWalletcdaiamount
-        }
-        o[key4].push(cdai_field)
-
-        return res.json(o);
-    }
-    catch (e) {
-        return res.sendStatus(400);
-    }
     });
 
 
-    app.route('/exchange').get(async (req, res) => {
+
+    app.route('/defidemo/trade/:trader_id/:suppyId/:receiverId/:amount').get(async (req, res) => {
+        if (isNaN(req.params.trader_id) || (req.params.trader_id < 1) || (req.params.trader_id > 5)) {
+            return res.sendStatus(400);
+        }
+
+        app.locals.user = req.params.trader_id - 1
+
+        try {
+            if (req.params.suppyId.toString() == "eth") {
+
+                if (req.params.receiverId.toString() == "ceth") {
+
+                    let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+                    await service.SupplyETH(newInput).then((result) => {
+                        return res.sendStatus(200);
+                    }).catch((error) => {
+                        return res.sendStatus(400);
+                    });
+
+                } else if (req.params.receiverId.toString() == "cdai") {
+
+                    let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+                    await service.repayborrowETH(newInput).then((result) => {
+                        return res.sendStatus(200);
+                    }).catch((error) => {
+                        return res.sendStatus(400);
+                    });
+                } else {
+                    return res.sendStatus(400);
+                }
+            } else if (req.params.suppyId.toString() == "ceth") {
+
+                if (req.params.receiverId.toString() == "eth") {
+
+                    let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+                    await service.redeemETH(newInput).then((result) => {
+                        return res.sendStatus(200);
+                    }).catch((error) => {
+                        return res.sendStatus(400);
+                    });
+                } else if (req.params.receiverId.toString() == "dai") {
+
+                    let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+                    await service.borrowDAI(newInput).then((result) => {
+                        return res.sendStatus(200);
+                    }).catch((error) => {
+                        return res.sendStatus(400);
+                    });
+                } else {
+                    return res.sendStatus(400);
+                }
+            } else if (req.params.suppyId.toString() == "dai") {
+
+                if (req.params.receiverId.toString() == "ceth") {
+
+                    let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+                    await service.repayborrowDAI(newInput).then((result) => {
+                        return res.sendStatus(200);
+                    }).catch((error) => {
+                        return res.sendStatus(400);
+                    });
+
+                } else if (req.params.receiverId.toString() == "cdai") {
+
+                    let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+                    await service.supplyDAI(newInput).then((result) => {
+                        return res.sendStatus(200);
+                    }).catch((error) => {
+                        return res.sendStatus(400);
+                    });
+                } else {
+                    return res.sendStatus(400);
+                }
+            } else if (req.params.suppyId.toString() == "cdai") {
+
+                if (req.params.receiverId.toString() == "dai") {
+
+                    let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+                    await service.redeemDAI(newInput).then((result) => {
+                        return res.sendStatus(200);
+                    }).catch((error) => {
+                        return res.sendStatus(400);
+                    });
+                } else if (req.params.receiverId.toString() == "eth") {
+
+                    let newInput = [req.params.amount * Math.pow(10, 3), parseInt(app.locals.user)];
+                    await service.borrowETH(newInput).then((result) => {
+                        return res.sendStatus(200);
+                    }).catch((error) => {
+                        return res.sendStatus(400);
+                    });
+                } else {
+                    return res.sendStatus(400);
+                }
+            } else {
+                return res.sendStatus(400);
+            }
+
+
+
+        }
+        catch (e) {
+            return res.sendStatus(400);
+        }
+    });
+
+    app.route('/defidemo/exchange').get(async (req, res) => {
 
         //console.dir((app.locals.user));
         try {
-        var o={}
-        var key = 'rates'
-        o[key]=[]
-        let cethethrate = await service.exchangeRatecETHETH()
-        var cetheth_field = {
-            from: 'ceth',
-            to: 'eth',
-            rate: cethethrate
-        }
-        o[key].push(cetheth_field)
+            var o = {}
+            var key = 'rates'
+            o[key] = []
+            let cethethrate = await service.exchangeRatecETHETH()
+            var cetheth_field = {
+                from: 'ceth',
+                to: 'eth',
+                rate: cethethrate
+            }
+            o[key].push(cetheth_field)
 
-        let cethdairate = await service.exchangeRatecETHDAI()
-        var cethdai_field = {
-            from: 'ceth',
-            to: 'dai',
-            rate: cethdairate
-        }
-        o[key].push(cethdai_field)
+            let cethdairate = await service.exchangeRatecETHDAI()
+            var cethdai_field = {
+                from: 'ceth',
+                to: 'dai',
+                rate: cethdairate
+            }
+            o[key].push(cethdai_field)
 
-        let cdaidairate = await service.exchangeRatecDAIDAI()
-        var cdaidai_field = {
-            from: 'cdai',
-            to: 'dai',
-            rate: cdaidairate
-        }
-        o[key].push(cdaidai_field)
+            let cdaidairate = await service.exchangeRatecDAIDAI()
+            var cdaidai_field = {
+                from: 'cdai',
+                to: 'dai',
+                rate: cdaidairate
+            }
+            o[key].push(cdaidai_field)
 
-        let cdaiethrate = await service.exchangeRatecDAIETH()
-        var cdaieth_field = {
-            from: 'cdai',
-            to: 'eth',
-            rate: cdaiethrate
-        }
-        o[key].push(cdaieth_field)
+            let cdaiethrate = await service.exchangeRatecDAIETH()
+            var cdaieth_field = {
+                from: 'cdai',
+                to: 'eth',
+                rate: cdaiethrate
+            }
+            o[key].push(cdaieth_field)
 
-        return res.json(o);
-    }
-    catch (e) {
-        return res.sendStatus(400);
-    }
+            return res.json(o);
+        }
+        catch (e) {
+            return res.sendStatus(400);
+        }
+    });
+
+    app.route('/defidemo/initAllAccounts').get(async (req, res) => {
+        let ganachestarted
+        ganachestarted = await service.startGanache().then((result) => {
+            console.dir('ganache started')
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+
+        await service.initAllfunctions().then((result) => {
+            return res.send(result);
+        }).catch((error) => {
+            console.log(error)
+            return res.sendStatus(400);
+        });
+
     });
 
     app.route('/initAllAccounts').get(async (req, res) => {
+
         await service.initAllfunctions().then((result) => {
             return res.send(result);
         }).catch((error) => {
@@ -136,7 +262,6 @@ module.exports = function (app) {
             return res.sendStatus(400);
         });
     });
-
 
     app.route('/initAllAccounts2').get(async (req, res) => {
         await service.initAllfunctions2().then((result) => {
@@ -310,7 +435,7 @@ module.exports = function (app) {
 
     app.route('/checkAccount/DAIBalance').get(async (req, res) => {
         await service.checknonborrowedDAIBalance(parseInt(app.locals.user)).then((result) => {
-                return res.send((result/ Math.pow(10, 3)).toString());
+            return res.send((result / Math.pow(10, 3)).toString());
             //return res.send((result).toString());
 
         }).catch((error) => {
@@ -321,7 +446,7 @@ module.exports = function (app) {
 
     app.route('/checkAccount/borrowedDAIBalance').get(async (req, res) => {
         await service.checkDAIBalance(parseInt(app.locals.user)).then((result) => {
-                return res.send((result/ Math.pow(10, 3)).toString());
+            return res.send((result / Math.pow(10, 3)).toString());
             //return res.send((result).toString());
 
         }).catch((error) => {
@@ -403,7 +528,7 @@ module.exports = function (app) {
 
     app.route('/checkSUMAccounts/DAIBalance').get(async (req, res) => {
         await service.checkSUMDAIBalance().then((result) => {
-                return res.send((result/ Math.pow(10, 3)).toString());
+            return res.send((result / Math.pow(10, 3)).toString());
             //return res.send((result).toString());
 
         }).catch((error) => {
@@ -414,7 +539,7 @@ module.exports = function (app) {
 
     app.route('/checkSUMAccounts/TotalLiquidity').get(async (req, res) => {
         await service.checkSUMAccountsTotalLiquidity().then((result) => {
-                return res.send((result/ Math.pow(10, 3)).toString());
+            return res.send((result / Math.pow(10, 3)).toString());
             //return res.send((result).toString());
 
         }).catch((error) => {
