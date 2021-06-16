@@ -9,13 +9,11 @@ module.exports = function (app) {
 
     var service = require('./service.js');
 
-    app.route('/defidemo/dashboard/:trader_id').get(async (req, res) => {
-        if (isNaN(req.params.trader_id) || (req.params.trader_id < 1) || (req.params.trader_id > 5)) {
-            return res.sendStatus(400);
-        }
+    app.route('/defi/api/dashboard/:trader_id').get(async (req, res) => {
+
 
         app.locals.user = req.params.trader_id - 1
-        //console.dir((app.locals.user));
+        console.dir((app.locals.user));
         try {
             var o = {}
             var key = 'eth'
@@ -83,7 +81,7 @@ module.exports = function (app) {
 
 
 
-    app.route('/defidemo/trade/:trader_id/:suppyId/:receiverId/:amount').get(async (req, res) => {
+    app.route('/defi/api/trade/:trader_id/:suppyId/:receiverId/:amount').get(async (req, res) => {
         if (isNaN(req.params.trader_id) || (req.params.trader_id < 1) || (req.params.trader_id > 5)) {
             return res.sendStatus(400);
         }
@@ -189,7 +187,7 @@ module.exports = function (app) {
         }
     });
 
-    app.route('/defidemo/exchange').get(async (req, res) => {
+    app.route('/defi/api/exchange').get(async (req, res) => {
 
         //console.dir((app.locals.user));
         try {
@@ -235,7 +233,7 @@ module.exports = function (app) {
         }
     });
 
-    app.route('/defidemo/initAllAccounts').get(async (req, res) => {
+    app.route('/defi/initAllAccounts').get(async (req, res) => {
         let ganachestarted
         ganachestarted = await service.startGanache().then((result) => {
             console.dir('ganache started')

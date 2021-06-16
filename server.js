@@ -12,6 +12,7 @@ routes(app); //register the route
 
 app.listen(port);
 
+app.use(`/`, express.static(`defiui`));
 
 console.log('DeFi sandbox demo server started on: ' + port);
 

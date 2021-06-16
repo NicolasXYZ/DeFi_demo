@@ -69,7 +69,7 @@ const fromMyWallet = {
 
 
 exports.initAllfunctions = async function (req, res) {
-  await sleep(3000)
+  await sleep(5000)
 
   function sleep(ms) {
       return new Promise((resolve) => {
