@@ -233,7 +233,7 @@ module.exports = function (app) {
         }
     });
 
-    app.route('/defi/initAllAccounts').get(async (req, res) => {
+    app.route('/defi/api/initAllAccounts').get(async (req, res) => {
         let ganachestarted
         ganachestarted = await service.startGanache().then((result) => {
             console.dir('ganache started')
